@@ -1,43 +1,92 @@
-/* --- GLOBAL VARIABLES (The Magic Palette) --- */
+/* =========================================
+   THE MAJIKKU "AURORA" THEME
+   ========================================= */
+
 :root {
-    --primary: #9b5de5;   /* Magical Purple */
-    --secondary: #5e38a8; /* Deep Indigo */
-    --accent: #00bbf9;    /* Cyan Glow */
-    --bg-dark: #0d0a15;
-    --glass: rgba(22, 20, 40, 0.75);
-    --border: rgba(155, 93, 229, 0.3);
-    --text-main: #e0dbe6;
+    /* --- THE PALETTE --- */
+    /* The Anchor Light (Bright Teal/Cyan) */
+    --primary: #00e0c6;
+    --primary-glow: rgba(0, 224, 198, 0.6);
+    
+    /* The Void (Deep Royal Purple) */
+    --secondary: #5e38a8;
+    
+    /* The Magic (Accent Blue) */
+    --accent: #4cc9f0;
+    
+    /* Backgrounds */
+    --bg-deep: #050a14; /* Very dark blue-black */
+    
+    /* Glassmorphism */
+    --glass: rgba(6, 28, 38, 0.75); /* Dark teal-tinted glass */
+    --border: rgba(0, 224, 198, 0.3); /* Teal border */
+    
+    /* Text */
+    --text-main: #e0fbfc;
+    --text-muted: #94a3b8;
 }
 
 /* --- MAIN BODY & BACKGROUND --- */
 body {
-    background-color: var(--bg-dark);
-    /* The Magical Void Background Image */
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(94, 56, 168, 0.4) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(0, 187, 249, 0.15) 0%, transparent 40%);
-    background-attachment: fixed;
     font-family: 'Inter', sans-serif;
     color: var(--text-main);
     margin: 0;
-    /* Removed padding here so the Navbar touches the top */
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden; /* Prevents scrollbars from the blur scale */
+    background-color: var(--bg-deep); /* Fallback color */
+    position: relative; /* Required for the pseudo-element to stick */
 }
 
-/* --- NAVIGATION BAR (New!) --- */
+/* This is the "Ghost" layer that holds the blurred image */
+body::before {
+    content: "";
+    position: fixed; /* Fixed so it doesn't scroll with the page */
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    z-index: -1; /* Puts it BEHIND the text */
+
+    /* 1. The Image */
+    background-image: url('background.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+
+    /* 2. The Blur Effect */
+    filter: blur(12px) brightness(0.6); /* Blurs and darkens it so text pops */
+    
+    /* 3. The Scale Fix */
+    /* We zoom in 10% (1.1) so the blurred edges don't show white lines */
+    transform: scale(1.1); 
+}
+
+/* An extra overlay to force the "Teal/Void" tint over the image */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    /* Teal at top, Dark Purple at bottom */
+    background: linear-gradient(to bottom, rgba(0, 224, 198, 0.15), rgba(5, 10, 20, 0.85));
+    pointer-events: none;
+}
+
+/* --- NAVIGATION BAR --- */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px 40px;
-    background: rgba(13, 10, 21, 0.95); /* Slightly darker for readability */
+    background: rgba(5, 10, 20, 0.9);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 0 20px rgba(155, 93, 229, 0.2);
+    box-shadow: 0 0 20px rgba(0, 224, 198, 0.1); /* Teal Shadow */
     position: sticky;
     top: 0;
     z-index: 1000;
+    backdrop-filter: blur(10px);
 }
 
 .nav-links a {
@@ -46,72 +95,107 @@ body {
     margin-left: 25px;
     font-family: 'Cinzel', serif;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     transition: 0.3s;
     letter-spacing: 1px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+/* The "Underline" Hover Effect */
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -5px;
+    left: 0;
+    background-color: var(--primary);
+    transition: 0.3s;
 }
 
 .nav-links a:hover {
-    color: var(--accent);
-    text-shadow: 0 0 10px var(--accent);
+    color: var(--primary);
+    text-shadow: 0 0 10px var(--primary-glow);
+}
+.nav-links a:hover::after {
+    width: 100%;
 }
 
 /* --- MAIN CONTAINER (The Glass Box) --- */
 .container {
     width: 90%;
     max-width: 1000px;
-    margin: 40px auto; /* Centers the box */
+    margin: 40px auto;
     background: var(--glass);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 50px;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    box-shadow: 0 0 50px rgba(0, 224, 198, 0.05);
 }
 
 /* --- TYPOGRAPHY --- */
 h1, h2, h3 {
     font-family: 'Cinzel', serif;
     color: #fff;
-    text-shadow: 0 0 15px rgba(155, 93, 229, 0.5);
+    text-shadow: 0 0 15px rgba(0, 224, 198, 0.4); /* Teal Glow */
     margin-bottom: 15px;
 }
-h1 { text-align: center; font-size: 2.5rem; margin-top: 0; }
-.subtitle { text-align: center; opacity: 0.7; margin-bottom: 40px; }
+h1 { text-align: center; font-size: 3rem; margin-top: 0; letter-spacing: 2px; }
+.subtitle { 
+    text-align: center; 
+    color: var(--primary); 
+    font-size: 1.1rem;
+    margin-bottom: 40px; 
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
 
 .section-title {
-    border-bottom: 2px solid var(--secondary);
+    border-bottom: 2px solid var(--primary); /* Teal line */
     padding-bottom: 10px;
     margin-top: 50px;
     margin-bottom: 25px;
-    color: var(--accent);
+    color: #fff;
+    font-size: 1.8rem;
 }
 
 /* --- FORMS (Inputs & Textareas) --- */
 .form-group { margin-bottom: 25px; }
-label { display: block; margin-bottom: 8px; font-weight: 600; color: #c4b5fd; }
+label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary); letter-spacing: 0.5px; }
 
 input, textarea, select {
     width: 100%;
     background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
     padding: 15px;
     border-radius: 8px;
     font-family: 'Inter', sans-serif;
-    box-sizing: border-box; /* Fixes width issues */
+    box-sizing: border-box;
+    transition: 0.3s;
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 15px rgba(0, 187, 249, 0.2);
+    border-color: var(--primary);
+    background: rgba(0, 224, 198, 0.05);
+    box-shadow: 0 0 15px rgba(0, 224, 198, 0.2);
+}
+
+.desc-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    margin-top: -5px;
+    font-style: italic;
 }
 
 /* --- BUTTONS --- */
 .submit-btn {
-    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    background: linear-gradient(135deg, var(--secondary), var(--primary)); /* Purple to Teal */
     color: white;
     border: none;
     width: 100%;
@@ -123,35 +207,16 @@ input:focus, textarea:focus {
     cursor: pointer;
     margin-top: 20px;
     transition: 0.3s;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
-.submit-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px var(--primary); }
-
-/* --- STAFF GRID --- */
-.staff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-.staff-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid var(--border); transition: 0.3s; }
-.staff-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-.staff-img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; object-fit: cover; }
-.staff-role { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
-
-/* --- ANNOUNCEMENTS --- */
-.announcement { 
-    border-left: 4px solid var(--primary); 
-    background: rgba(255,255,255,0.05); 
-    padding: 20px; 
-    margin-bottom: 20px; 
-    border-radius: 0 10px 10px 0; 
+.submit-btn:hover { 
+    transform: scale(1.02); 
+    box-shadow: 0 0 30px var(--primary-glow); 
+    background: linear-gradient(135deg, var(--primary), var(--secondary)); /* Swap gradient on hover */
 }
-.date { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; display: block; font-family: 'Cinzel', serif; }
 
-/* --- LISTS (For Rules) --- */
-ul { list-style: none; padding: 0; }
-li.announcement { margin-bottom: 15px; }
-
-/* =========================================
-   FORM SPECIFIC STYLES (Buttons & Logic)
-   ========================================= */
-
-/* --- ROLE SELECTOR GRID --- */
+/* --- ROLE SELECTOR GRID (Buttons) --- */
 .role-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -160,7 +225,7 @@ li.announcement { margin-bottom: 15px; }
 }
 
 .role-btn {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
     padding: 15px;
     text-align: center;
@@ -169,45 +234,98 @@ li.announcement { margin-bottom: 15px; }
     transition: 0.3s;
     font-family: 'Cinzel', serif;
     font-weight: bold;
-    color: #fff;
-    user-select: none; /* Prevents highlighting text when clicking */
+    color: var(--text-muted);
+    user-select: none;
 }
 
 .role-btn:hover {
-    background: rgba(155, 93, 229, 0.3);
+    background: rgba(0, 224, 198, 0.1);
+    color: #fff;
     border-color: #fff;
     transform: translateY(-2px);
 }
 
 .role-btn.active {
     background: var(--primary);
-    color: #fff;
-    box-shadow: 0 0 20px var(--primary);
-    border-color: var(--accent);
+    color: #000; /* Dark text on bright button for contrast */
+    box-shadow: 0 0 20px var(--primary-glow);
+    border-color: var(--primary);
 }
 
-/* --- DYNAMIC SECTION LOGIC (Hides/Shows Teams) --- */
+/* --- STAFF GRID --- */
+.staff-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+    gap: 25px; 
+    margin-bottom: 50px;
+}
+
+.staff-card { 
+    background: rgba(255,255,255,0.03); 
+    padding: 30px 20px; 
+    border-radius: 15px; 
+    text-align: center; 
+    border: 1px solid var(--border); 
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Magical shine effect on cards */
+.staff-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0.5;
+}
+
+.staff-card:hover { 
+    transform: translateY(-5px); 
+    border-color: var(--primary); 
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 224, 198, 0.05);
+}
+
+.staff-img { 
+    width: 100px; 
+    height: 100px; 
+    border-radius: 50%; 
+    border: 3px solid var(--primary); 
+    margin-bottom: 15px; 
+    object-fit: cover; 
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.staff-role { 
+    color: var(--primary); 
+    font-size: 0.9rem; 
+    font-weight: bold; 
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+/* --- DYNAMIC SECTION LOGIC --- */
 .dynamic-content {
-    display: none; /* Hides all teams by default */
+    display: none; 
     animation: slideDown 0.5s ease;
 }
-
-.dynamic-content.visible {
-    display: block; /* Shows only the active team */
-}
-
+.dynamic-content.visible { display: block; }
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- TEAM DESCRIPTION BOX --- */
 .team-description {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 224, 198, 0.05); /* Teal tint */
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    border-left: 3px solid var(--accent);
+    border-left: 3px solid var(--primary);
     line-height: 1.6;
 }
 
@@ -216,34 +334,44 @@ li.announcement { margin-bottom: 15px; }
     display: flex;
     align-items: center;
     gap: 15px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.3);
     padding: 10px;
     border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 input[type="range"] {
     accent-color: var(--primary);
     cursor: pointer;
-    border: none; /* Removes standard input border for sliders */
+    border: none;
     padding: 0;
+    height: 6px;
 }
 
-/* --- CHECKBOX GROUPS (Submission) --- */
+/* --- CHECKBOX GROUPS --- */
 .checkbox-group {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 15px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.3);
     padding: 15px;
     border-radius: 8px;
     border: 1px solid transparent;
     transition: 0.3s;
 }
 .checkbox-group:hover {
-    border-color: var(--border);
+    border-color: var(--primary);
+    background: rgba(0, 224, 198, 0.05);
 }
 .checkbox-group input {
     width: 20px;
     height: 20px;
     cursor: pointer;
+    accent-color: var(--primary);
 }
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }

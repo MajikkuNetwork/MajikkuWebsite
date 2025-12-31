@@ -3,17 +3,23 @@
     <h1>Our Team</h1>
     <p class="subtitle">The mages behind the magic</p>
     
-    <div class="staff-grid">
-        <div class="staff-card">
-            <img src="https://cdn.discordapp.com/embed/avatars/0.png" class="staff-img">
-            <h3>Jacob</h3>
-            <div class="staff-role">Owner / Developer</div>
-        </div>
+    {% for group in group_order %}
+        {% set group_name = group['name'] %}
+        {% set members = staff_groups[group_name] %}
 
-        <div class="staff-card">
-            <img src="https://cdn.discordapp.com/embed/avatars/1.png" class="staff-img">
-            <h3>Admin Name</h3>
-            <div class="staff-role">Administrator</div>
-        </div>
-    </div>
+        {% if members %}
+            <h2 class="section-title">{{ group_name }}</h2>
+            
+            <div class="staff-grid">
+                {% for member in members %}
+                <div class="staff-card">
+                    <img src="{{ member.avatar }}" class="staff-img" alt="{{ member.name }}">
+                    <h3>{{ member.name }}</h3>
+                    <div class="staff-role">{{ member.role }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
 {% endblock %}
