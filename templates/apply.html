@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1>Majikku Network</h1>
+    <p class="subtitle">Staff Application Form</p>
+
+    <form id="appForm">
+        <h2 class="section-title">General Information</h2>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Discord Name (Verified)</label>
+                <input type="text" value="{{ user['username'] }}" class="read-only" readonly>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Discord ID (Verified)</label>
+                <input type="text" value="{{ user['id'] }}" class="read-only" readonly>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>What is your Hytale name?</label>
+            <input type="text" id="hytale_name" required>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>How old are you?</label>
+                <input type="number" id="age" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>What is your Timezone?</label>
+                <input type="text" id="timezone" placeholder="e.g. EST" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>What are your pronouns?</label>
+            <input type="text" id="pronouns" placeholder="e.g. He/Him, They/Them">
+        </div>
+
+        <div class="form-group">
+            <label>How many hours can you realistically contribute daily/weekly?</label>
+            <div class="desc-text">This isn't a determining factor, just to gauge activity.</div>
+            <input type="text" id="availability" placeholder="e.g. 2 hours a day" required>
+        </div>
+
+        <div class="form-group">
+            <label>What language(s) are you fluent in?</label>
+            <input type="text" id="languages">
+        </div>
+
+        <h2 class="section-title">Select Your Path</h2>
+        <p style="text-align:center; margin-bottom: 20px;">What team are you applying for?</p>
+        
+        <div class="role-grid">
+            <div class="role-btn" onclick="showTeam('mod', this)">Moderation</div>
+            <div class="role-btn" onclick="showTeam('dev', this)">Development</div>
+            <div class="role-btn" onclick="showTeam('build', this)">Build Team</div>
+            <div class="role-btn" onclick="showTeam('artist', this)">Artist</div>
+            <div class="role-btn" onclick="showTeam('story', this)">Story Teller</div>
+            <div class="role-btn" onclick="showTeam('coordinator', this)">Coordinator</div>
+            <div class="role-btn" onclick="showTeam('model', this)">Modeling</div>
+            <div class="role-btn" onclick="showTeam('tester', this)">Tester</div>
+        </div>
+
+
+        <div id="mod" class="dynamic-content">
+            <h3>Moderation Team Application</h3>
+            <div class="team-description">
+                The Moderation Team serves as the guardians of our community... Accepted Applicants will begin as a <strong>Helper</strong>. We are looking for individuals who possess patience, maturity, and strong communication skills.
+            </div>
+
+            <div class="form-group">
+                <label>Why do you want to join the Moderation Team?</label>
+                <textarea rows="4" class="team-answer" data-question="Why Mod Team?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Confidence in speaking to players/staff (1-10)</label>
+                <div class="range-wrap">
+                    <span>1</span>
+                    <input type="range" min="1" max="10" class="team-answer" data-question="Comm Confidence" oninput="this.nextElementSibling.value = this.value">
+                    <output style="color:var(--accent); font-weight:bold; margin-left:10px;">5</output>
+                    <span>10</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Have you ever been a staff member anywhere else?</label>
+                <textarea rows="3" class="team-answer" data-question="Past Experience"></textarea>
+            </div>
+
+            <h4>Scenario Questions</h4>
+
+            <div class="form-group">
+                <label>Scenario: You observe a player using hacks. What do you do?</label>
+                <textarea rows="4" class="team-answer" data-question="Scenario: Hacker"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Scenario: Technical issues, you are the only staff online.</label>
+                <textarea rows="4" class="team-answer" data-question="Scenario: Tech Issues"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Scenario: Argument between players or staff.</label>
+                <textarea rows="4" class="team-answer" data-question="Scenario: Argument"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Scenario: You are asked a question you don't know.</label>
+                <textarea rows="3" class="team-answer" data-question="Scenario: Unknown Question"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Scenario: Friend breaking rules.</label>
+                <textarea rows="3" class="team-answer" data-question="Scenario: Friend Breaking Rules"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Would you be willing to assist with tickets?</label>
+                <select class="team-answer" data-question="Willing to do Tickets">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Maybe">Maybe</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="dev" class="dynamic-content">
+            <h3>Developer & Technician Application</h3>
+            <div class="team-description">
+                The engine that powers Majikku. We are looking for Developers (Plugins/Mods) and Technicians (Config/Setup).
+            </div>
+
+            <div class="form-group">
+                <label>Which Role are you applying for?</label>
+                <select class="team-answer" data-question="Dev Role Type">
+                    <option value="Technician">Technician (Config/Setup)</option>
+                    <option value="Developer">Developer (Coding)</option>
+                    <option value="Both">Both</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Why are you interested in joining the team?</label>
+                <textarea rows="3" class="team-answer" data-question="Why Dev Team?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Do you have previous experience?</label>
+                <textarea rows="3" class="team-answer" data-question="Dev Experience"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>How well can you spot bugs and errors?</label>
+                <textarea rows="2" class="team-answer" data-question="Bug Spotting Ability"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Are you willing to learn new skills/take an exam?</label>
+                <textarea rows="2" class="team-answer" data-question="Willing to Learn"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Do you know how to setup a local Minecraft/Hytale server?</label>
+                <select class="team-answer" data-question="Local Server Knowledge">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Experience creating Plugins/Mods?</label>
+                <select class="team-answer" data-question="Coding Experience">
+                    <option value="Spigot/Bukkit">Spigot/Bukkit Plugins</option>
+                    <option value="Forge">Forge Mods</option>
+                    <option value="Both">Both</option>
+                    <option value="None">No Experience</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tell us about yourself / Project Ideas</label>
+                <textarea rows="4" class="team-answer" data-question="Dev Bio/Ideas"></textarea>
+            </div>
+        </div>
+
+        <div id="build" class="dynamic-content">
+            <h3>Build Team Application</h3>
+            <div class="team-description">
+                Responsible for creating event areas, spawns, and features.
+            </div>
+
+            <div class="form-group">
+                <label>Why do you want to be a builder?</label>
+                <textarea rows="3" class="team-answer" data-question="Why Builder?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Favorite Building Style?</label>
+                <input type="text" class="team-answer" data-question="Build Style">
+            </div>
+
+            <div class="form-group">
+                <label>Do you prefer Large or Small scale?</label>
+                <select class="team-answer" data-question="Build Scale Preference">
+                    <option value="Large">Large Scale</option>
+                    <option value="Small">Small Scale</option>
+                    <option value="Mix">Mix / No Preference</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Self-Assessment (1-10)</label>
+                
+                <div class="desc-text" style="margin-top:10px;">Attention to Detail</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Detail"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Terraforming</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Terraforming"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Interiors</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Interior"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Color Palettes</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Palettes"><output>5</output></div>
+            </div>
+
+            <div class="form-group">
+                <label>Portfolio Link (Imgur/YouTube)</label>
+                <input type="text" class="team-answer" data-question="Portfolio Link">
+            </div>
+        </div>
+
+        <div id="artist" class="dynamic-content">
+            <h3>Artist Team Application</h3>
+            <div class="team-description">
+                Creating textures, icons, banners, and promotional art.
+            </div>
+
+            <div class="form-group">
+                <label>Why do you want to join the Art Department?</label>
+                <textarea rows="3" class="team-answer" data-question="Why Artist?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Do you have experience with digital mediums?</label>
+                <textarea rows="2" class="team-answer" data-question="Digital Experience"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Preferred Art Medium?</label>
+                <input type="text" class="team-answer" data-question="Preferred Medium" placeholder="e.g. Pixel Art, Drawing, Textures">
+            </div>
+
+            <div class="form-group">
+                <label>Experience with 3D Models/Textures?</label>
+                <input type="text" class="team-answer" data-question="3D Experience">
+            </div>
+
+            <div class="form-group">
+                <label>Self-Rated Creativity (1-10)</label>
+                <div class="range-wrap">
+                    <span>1</span>
+                    <input type="range" min="1" max="10" class="team-answer" data-question="Creativity Level" oninput="this.nextElementSibling.value = this.value">
+                    <output style="color:var(--accent); font-weight:bold; margin-left:10px;">5</output>
+                    <span>10</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Portfolio Link (Required)</label>
+                <div class="desc-text">Imgur album or ArtStation link.</div>
+                <input type="text" class="team-answer" data-question="Art Portfolio">
+            </div>
+        </div>
+
+        <div id="story" class="dynamic-content">
+            <h3>Story Teller / Writer Application</h3>
+            <div class="team-description">
+                Creating lore, events, dialogue, and bringing the world to life.
+            </div>
+
+            <div class="form-group">
+                <label>Why join the Creative Team?</label>
+                <textarea rows="3" class="team-answer" data-question="Why Writer?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Writing Skills Self-Assessment (1-10)</label>
+                
+                <div class="desc-text" style="margin-top:10px;">Grammar/Punctuation</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Grammar"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Story Structure</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Structure"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">English Fluency</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Fluency"><output>5</output></div>
+            </div>
+
+            <div class="form-group">
+                <label>Select a Writing Prompt</label>
+                <select class="team-answer" data-question="Prompt Selection">
+                    <option value="Create Creature">1. Create a Creature (Name & Lore)</option>
+                    <option value="Create Game">2. Create a Game Concept (Theme & Story)</option>
+                    <option value="Isekai">3. Thrown into Hytale (Life Story)</option>
+                    <option value="Event Idea">4. Original Event Idea for Majikku</option>
+                    <option value="Free Choice">5. Free Choice (Short Work)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Your Story (Min 5 Sentences)</label>
+                <textarea rows="6" class="team-answer" data-question="Story Submission"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Story Synopsis (1 Sentence summary)</label>
+                <input type="text" class="team-answer" data-question="Story Synopsis">
+            </div>
+        </div>
+
+        <div id="coordinator" class="dynamic-content">
+            <h3>Coordinator Team Application</h3>
+            <div class="team-description">
+                Managing events and our social media presence.
+            </div>
+
+            <div class="form-group">
+                <label>Which focus are you applying for?</label>
+                <select class="team-answer" data-question="Coordinator Focus">
+                    <option value="Event Coordinator">Event Coordinator</option>
+                    <option value="Social Media">Social Media Manager</option>
+                    <option value="Both">Both</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Why do you want to join this team?</label>
+                <textarea rows="3" class="team-answer" data-question="Why Coordinator?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Do you have experience managing communities or socials?</label>
+                <textarea rows="3" class="team-answer" data-question="Coord Experience"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Link to previous work (Event videos, Social posts)</label>
+                <input type="text" class="team-answer" data-question="Coord Portfolio">
+            </div>
+        </div>
+
+        <div id="model" class="dynamic-content">
+            <h3>Modeling Team Application</h3>
+            <div class="team-description">
+                Creating assets for the Hytale environment. Note: We are lenient as Hytale is new.
+            </div>
+            <div class="form-group">
+                <label>What software do you use? (Blockbench, Blender, etc.)</label>
+                <input type="text" class="team-answer" data-question="Software Used">
+            </div>
+            <div class="form-group">
+                <label>Show us your models (Portfolio Link)</label>
+                <input type="text" class="team-answer" data-question="Model Portfolio">
+            </div>
+        </div>
+
+        <div id="tester" class="dynamic-content">
+            <h3>QA / Tester Team Application</h3>
+            <div class="team-description">
+                Finding bugs before they reach the public.
+            </div>
+            <div class="form-group">
+                <label>Do you have experience with bug testing?</label>
+                <textarea rows="3" class="team-answer" data-question="QA Experience"></textarea>
+            </div>
+            <div class="form-group">
+                <label>How detail-oriented are you? (1-10)</label>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="QA Detail Level"><output>5</output></div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Miscellaneous</h2>
+        
+        <div class="form-group">
+            <label>When is your birthday?</label>
+            <div class="desc-text">Format: MM/DD (e.g., 09/20)</div>
+            <input type="text" id="birthday" placeholder="MM/DD" pattern="\d{2}/\d{2}" title="MM/DD Format" class="misc-answer" data-question="Birthday" required>
+        </div>
+
+        <div class="form-group">
+            <label>What is your current rank on the Network?</label>
+            <input type="text" class="misc-answer" data-question="Current Rank" required>
+        </div>
+
+        <div class="form-group">
+            <label>Do you have any alternate accounts?</label>
+            <textarea rows="2" class="misc-answer" data-question="Alts"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Do you have any issues with any players or staff?</label>
+            <textarea rows="3" class="misc-answer" data-question="Player/Staff Issues"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Do you have any punishments on the Network?</label>
+            <input type="text" class="misc-answer" data-question="Punishment History" required>
+        </div>
+
+        <div class="form-group">
+            <label>What is your favorite mode/area of the Network?</label>
+            <input type="text" class="misc-answer" data-question="Favorite Mode" required>
+        </div>
+
+        <h2 class="section-title">Submission</h2>
+        <div class="team-description" style="border-left-color: var(--secondary);">
+            You have completed the application. Please make sure to do the following to allow our Staff Manager to contact you.
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="check_discord" required>
+            <div>
+                <label style="margin:0; display:inline;">Are you in the Discord Server?</label>
+                <div class="desc-text"><a href="https://discord.majikku.org" target="_blank" style="color:var(--accent)">https://discord.majikku.org</a></div>
+            </div>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="check_dms" required>
+            <div>
+                <label style="margin:0; display:inline;">Is "Direct Messages" enabled?</label>
+                <div class="desc-text">This allows the Staff Manager to contact you.</div>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit Application</button>
+    </form>
+
+
+    <script>
+        function showTeam(teamId, btnElement) {
+            const allSections = document.querySelectorAll('.dynamic-content');
+            allSections.forEach(section => {
+                section.classList.remove('visible');
+            });
+            const allButtons = document.querySelectorAll('.role-btn');
+            allButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const targetSection = document.getElementById(teamId);
+            if (targetSection) {
+                targetSection.classList.add('visible');
+            }
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+        }
+
+        const form = document.getElementById('appForm');
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            const activeBtn = document.querySelector('.role-btn.active');
+            if (!activeBtn) {
+                alert("Please select a team path at the top!");
+                return;
+            }
+
+            const teamName = activeBtn.innerText;
+            const visibleSection = document.querySelector('.dynamic-content.visible');
+            
+            // Gather General Info
+            const payload = {
+                hytale_name: document.getElementById('hytale_name').value,
+                age: document.getElementById('age').value,
+                timezone: document.getElementById('timezone').value,
+                pronouns: document.getElementById('pronouns').value,
+                availability: document.getElementById('availability').value,
+                languages: document.getElementById('languages').value,
+                team: teamName,
+                answers: {}
+            };
+
+            // Gather SPECIFIC Team Answers
+            if (visibleSection) {
+                const inputs = visibleSection.querySelectorAll('.team-answer');
+                inputs.forEach(input => {
+                    const question = input.getAttribute('data-question');
+                    payload.answers[question] = input.value;
+                });
+            }
+
+            // Gather MISC Answers
+            const miscInputs = document.querySelectorAll('.misc-answer');
+            miscInputs.forEach(input => {
+                const question = input.getAttribute('data-question');
+                payload.answers[question] = input.value;
+            });
+
+            // Agreements
+            payload.answers["In Discord?"] = document.getElementById('check_discord').checked ? "Yes" : "No";
+            payload.answers["DMs Enabled?"] = document.getElementById('check_dms').checked ? "Yes" : "No";
+
+            // Send
+            const btn = document.querySelector('.submit-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.querySelector('.container').innerHTML = `
+                        <h1 style="color:var(--accent)">Application Sent!</h1>
+                        <p style="text-align:center">Thank you for applying to the Majikku Network.</p>
+                        <p style="text-align:center"><a href="/" style="color:white">Return Home</a></p>
+                    `;
+                } else {
+                    alert("Error: " + (result.error || "Unknown error"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Network error.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Ban Appeals</h1>
+    <form id="appealForm" onsubmit="event.preventDefault(); submitAppeal();">
+        <div class="form-group">
+            <label>Why were you banned?</label>
+            <input type="text" id="ban_reason" required>
+        </div>
+        <div class="form-group">
+            <label>Why should we unban you?</label>
+            <textarea id="appeal_text" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Submit Appeal</button>
+    </form>
+
+    <script>
+        async function submitAppeal() {
+            const payload = {
+                reason: document.getElementById('ban_reason').value,
+                apology: document.getElementById('appeal_text').value
+            };
+            
+            // Logic to send to Flask (create /submit-appeal route in app.py)
+            await fetch('/submit-appeal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            alert("Appeal Sent!");
+        }
+    </script>
+{% endblock %}

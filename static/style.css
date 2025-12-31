@@ -1,0 +1,249 @@
+/* --- GLOBAL VARIABLES (The Magic Palette) --- */
+:root {
+    --primary: #9b5de5;   /* Magical Purple */
+    --secondary: #5e38a8; /* Deep Indigo */
+    --accent: #00bbf9;    /* Cyan Glow */
+    --bg-dark: #0d0a15;
+    --glass: rgba(22, 20, 40, 0.75);
+    --border: rgba(155, 93, 229, 0.3);
+    --text-main: #e0dbe6;
+}
+
+/* --- MAIN BODY & BACKGROUND --- */
+body {
+    background-color: var(--bg-dark);
+    /* The Magical Void Background Image */
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(94, 56, 168, 0.4) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(0, 187, 249, 0.15) 0%, transparent 40%);
+    background-attachment: fixed;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    margin: 0;
+    /* Removed padding here so the Navbar touches the top */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- NAVIGATION BAR (New!) --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background: rgba(13, 10, 21, 0.95); /* Slightly darker for readability */
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 0 20px rgba(155, 93, 229, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 25px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    letter-spacing: 1px;
+}
+
+.nav-links a:hover {
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+}
+
+/* --- MAIN CONTAINER (The Glass Box) --- */
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 40px auto; /* Centers the box */
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 50px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+
+/* --- TYPOGRAPHY --- */
+h1, h2, h3 {
+    font-family: 'Cinzel', serif;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(155, 93, 229, 0.5);
+    margin-bottom: 15px;
+}
+h1 { text-align: center; font-size: 2.5rem; margin-top: 0; }
+.subtitle { text-align: center; opacity: 0.7; margin-bottom: 40px; }
+
+.section-title {
+    border-bottom: 2px solid var(--secondary);
+    padding-bottom: 10px;
+    margin-top: 50px;
+    margin-bottom: 25px;
+    color: var(--accent);
+}
+
+/* --- FORMS (Inputs & Textareas) --- */
+.form-group { margin-bottom: 25px; }
+label { display: block; margin-bottom: 8px; font-weight: 600; color: #c4b5fd; }
+
+input, textarea, select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box; /* Fixes width issues */
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(0, 187, 249, 0.2);
+}
+
+/* --- BUTTONS --- */
+.submit-btn {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+.submit-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px var(--primary); }
+
+/* --- STAFF GRID --- */
+.staff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.staff-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid var(--border); transition: 0.3s; }
+.staff-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+.staff-img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px; object-fit: cover; }
+.staff-role { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
+
+/* --- ANNOUNCEMENTS --- */
+.announcement { 
+    border-left: 4px solid var(--primary); 
+    background: rgba(255,255,255,0.05); 
+    padding: 20px; 
+    margin-bottom: 20px; 
+    border-radius: 0 10px 10px 0; 
+}
+.date { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; display: block; font-family: 'Cinzel', serif; }
+
+/* --- LISTS (For Rules) --- */
+ul { list-style: none; padding: 0; }
+li.announcement { margin-bottom: 15px; }
+
+/* =========================================
+   FORM SPECIFIC STYLES (Buttons & Logic)
+   ========================================= */
+
+/* --- ROLE SELECTOR GRID --- */
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.role-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.3s;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    color: #fff;
+    user-select: none; /* Prevents highlighting text when clicking */
+}
+
+.role-btn:hover {
+    background: rgba(155, 93, 229, 0.3);
+    border-color: #fff;
+    transform: translateY(-2px);
+}
+
+.role-btn.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 0 20px var(--primary);
+    border-color: var(--accent);
+}
+
+/* --- DYNAMIC SECTION LOGIC (Hides/Shows Teams) --- */
+.dynamic-content {
+    display: none; /* Hides all teams by default */
+    animation: slideDown 0.5s ease;
+}
+
+.dynamic-content.visible {
+    display: block; /* Shows only the active team */
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- TEAM DESCRIPTION BOX --- */
+.team-description {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.6;
+}
+
+/* --- RANGE SLIDERS --- */
+.range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 8px;
+}
+input[type="range"] {
+    accent-color: var(--primary);
+    cursor: pointer;
+    border: none; /* Removes standard input border for sliders */
+    padding: 0;
+}
+
+/* --- CHECKBOX GROUPS (Submission) --- */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+.checkbox-group:hover {
+    border-color: var(--border);
+}
+.checkbox-group input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
