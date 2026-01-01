@@ -7,11 +7,31 @@ services:
     restart: always
     ports:
       - "5000:5000"
+    volumes:
+      # This saves your SQLite database file to the host machine
+      # so it survives updates/restarts.
+      - ./majikku_data:/app/data
     environment:
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      # --- FLASK ---
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      
+      # --- DISCORD OAUTH (Login) ---
+      # Renamed to match your app.py (CLIENT_ID, not DISCORD_CLIENT_ID)
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - REDIRECT_URI=${REDIRECT_URI} 
+      
+      # --- DISCORD BOT (Staff/Guild Checks) ---
+      - BOT_TOKEN=${BOT_TOKEN}
+      - GUILD_ID=${GUILD_ID}
+      
+      # --- WEBHOOKS ---
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - APPEALS_WEBHOOK_URL=${APPEALS_WEBHOOK_URL}
+      
+      # --- HYTALE DATABASE (MySQL) ---
+      # Renamed to match your app.py
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DB=${MYSQL_DB}

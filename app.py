@@ -21,7 +21,7 @@ GUILD_ID = os.getenv("GUILD_ID")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
 APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") 
 
-REDIRECT_URI = "http://127.0.0.1:5000/callback" 
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 API_ENDPOINT = 'https://discord.com/api/v10'
 
 # IDs allowed to access Admin Panel
