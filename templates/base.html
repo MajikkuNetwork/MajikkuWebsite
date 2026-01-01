@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Majikku Network</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -13,13 +14,21 @@
         <div style="font-family: 'Cinzel'; font-size: 1.5rem; color: white;">Majikku Network</div>
         <div class="nav-links">
             <a href="/">Home</a>
+            <a href="/events">Events</a>
+            <a href="/socials">Socials</a>
             <a href="/info">Lore & Rules</a>
             <a href="/staff">Staff</a>
             <a href="/apply">Applications</a>
             <a href="/appeal">Appeals</a>
-            <a href="https://store.majikku.org target="_blank" style="color: #ffcc00;">Store</a>
+            <a href="https://store.majikku.org" target="_blank" style="color: #ffcc00;">Store</a>
+            <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" style="color: #ffcc00;">Discord</a>
+            
+            {% if session.get('is_admin') or session.get('is_coord') %}
+                <a href="/admin" style="color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px;">Admin</a>
+            {% endif %}
+
             {% if session.get('user') %}
-                <a href="/logout" style="border: 1px solid var(--primary); padding: 5px 15px; border-radius: 5px;">Logout</a>
+                <a href="/logout" style="border: 1px solid var(--secondary); padding: 5px 15px; border-radius: 5px;">Logout</a>
             {% else %}
                 <a href="/login">Login</a>
             {% endif %}

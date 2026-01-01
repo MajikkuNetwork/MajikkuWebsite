@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Upcoming Events</h1>
+    <p class="subtitle">Gatherings & Tournaments</p>
+
+    {% if announcements %}
+        {% for post in announcements %}
+        <div class="announcement" style="border-left: 3px solid var(--secondary);">
+            <span class="date">{{ post.created_at }}</span>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--accent);">
+                Organized by {{ post.author }}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; color: #aaa;">No events scheduled right now.</p>
+    {% endif %}
+{% endblock %}

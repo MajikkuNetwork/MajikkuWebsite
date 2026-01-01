@@ -1,32 +1,130 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Ban Appeals</h1>
-    <form id="appealForm" onsubmit="event.preventDefault(); submitAppeal();">
-        <div class="form-group">
-            <label>Why were you banned?</label>
-            <input type="text" id="ban_reason" required>
+
+    <h1>Majikku Network</h1>
+    <p class="subtitle">Punishment Appeal Form</p>
+
+    <form id="appealForm">
+        <h2 class="section-title">Identity Verification</h2>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Discord Name</label>
+                <input type="text" value="{{ user['username'] }}" class="read-only" readonly style="opacity: 0.7; cursor: not-allowed;">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Discord ID</label>
+                <input type="text" value="{{ user['id'] }}" class="read-only" readonly style="opacity: 0.7; cursor: not-allowed;">
+            </div>
         </div>
+
         <div class="form-group">
-            <label>Why should we unban you?</label>
-            <textarea id="appeal_text" rows="5" required></textarea>
+            <label>What is your Hytale username?</label>
+            <input type="text" id="hytale_username" 
+                   value="{{ player['username'] if player and player['username'] else '' }}" 
+                   {% if player and player['username'] %} class="read-only" readonly {% endif %} 
+                   required>
+                   
+            {% if player and player['username'] %}
+                <div class="desc-text" style="color: var(--primary); font-weight: bold; margin-top: 5px;">
+                    ✓ Verified via Server Database
+                </div>
+            {% endif %}
         </div>
-        <button type="submit" class="submit-btn">Submit Appeal</button>
+
+        <h2 class="section-title">Punishment Details</h2>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Where were you punished?</label>
+                <select id="platform" required>
+                    <option value="Discord Server">Discord Server</option>
+                    <option value="In-Game (Hub)">In-Game (Hub)</option>
+                    <option value="In-Game (SMP)">In-Game (SMP)</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Punishment Type</label>
+                <select id="type" required>
+                    <option value="Ban">Ban (Temporary or Perm)</option>
+                    <option value="Mute">Mute / Timeout</option>
+                    <option value="Warning">Warning</option>
+                    <option value="Blacklist">Blacklist</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Punishment ID (Optional)</label>
+                <input type="text" id="punishment_id" placeholder="e.g. #3492">
+            </div>
+            <div class="form-group" style="flex: 2;">
+                <label>Reason given for punishment</label>
+                <input type="text" id="ban_reason" placeholder="e.g. Griefing, Toxicity" required>
+            </div>
+        </div>
+
+        <h2 class="section-title">Your Statement</h2>
+        <div class="team-description" style="border-left-color: #ff4444;">
+            Please be honest. Lying in an appeal will result in an automatic denial and may lead to a permanent blacklist.
+        </div>
+
+        <div class="form-group">
+            <label>Why should this punishment be revoked?</label>
+            <div class="desc-text">Explain your side of the story or provide an apology.</div>
+            <textarea id="appeal_text" rows="8" required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #a83838, #e0004c);">Submit Appeal</button>
     </form>
 
     <script>
-        async function submitAppeal() {
+        const form = document.getElementById('appealForm');
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const btn = document.querySelector('.submit-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
             const payload = {
-                reason: document.getElementById('ban_reason').value,
-                apology: document.getElementById('appeal_text').value
+                hytale_username: document.getElementById('hytale_username').value,
+                platform: document.getElementById('platform').value,
+                type: document.getElementById('type').value,
+                punishment_id: document.getElementById('punishment_id').value,
+                ban_reason: document.getElementById('ban_reason').value,
+                appeal_text: document.getElementById('appeal_text').value
             };
-            
-            // Logic to send to Flask (create /submit-appeal route in app.py)
-            await fetch('/submit-appeal', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            alert("Appeal Sent!");
-        }
+
+            try {
+                const response = await fetch('/submit-appeal', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.querySelector('.container').innerHTML = `
+                        <h1 style="color:#ff4444">Appeal Sent</h1>
+                        <p style="text-align:center">Your appeal has been submitted to the Leadership team.</p>
+                        <p style="text-align:center">Do not DM staff about your appeal; we will review it shortly.</p>
+                        <p style="text-align:center"><a href="/" style="color:white">Return Home</a></p>
+                    `;
+                } else {
+                    alert("Error: " + (result.error || "Unknown error"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Network error.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
     </script>
 {% endblock %}

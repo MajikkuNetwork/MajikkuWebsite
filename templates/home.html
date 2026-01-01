@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
     <h1 style="font-size: 3rem;">Welcome to Majikku</h1>
-    <p class="subtitle">Where Magic Meets Mystery</p>
+    <p class="subtitle">The Void-Anchor Alliance</p>
 
     <h2 class="section-title">Latest Announcements</h2>
     
-    <div class="announcement">
-        <span class="date">December 31, 2025</span>
-        <h3>Server Beta Launching Soon</h3>
-        <p>We are excited to announce that the Majikku Network beta is just around the corner...</p>
-    </div>
+    {% if announcements %}
+        {% for post in announcements %}
+        <div class="announcement">
+            <span class="date">{{ post.date }}</span>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--primary);">Posted by {{ post.author }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; color: #aaa;">No announcements yet.</p>
+    {% endif %}
 
-    <div class="announcement">
-        <span class="date">December 28, 2025</span>
-        <h3>Staff Applications Open</h3>
-        <p>We are looking for builders and developers. Check the Applications tab!</p>
-    </div>
 {% endblock %}
