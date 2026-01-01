@@ -375,3 +375,70 @@ input[type="range"] {
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* --- ADMIN PANEL STYLES --- */
+
+.admin-box {
+    background: rgba(0, 0, 0, 0.4); /* Dark glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(5px);
+}
+
+.majikku-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.majikku-input:focus {
+    outline: none;
+    border-color: var(--primary); /* Assumes --primary is defined higher up */
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.submit-btn {
+    background: linear-gradient(45deg, #00ccff, #aa00ff); /* Fallback colors if vars aren't set */
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: transform 0.2s;
+    width: 100%;
+}
+
+.submit-btn:hover {
+    transform: scale(1.02);
+    filter: brightness(1.2);
+}
+
+/* --- SUMMERNOTE DARK MODE OVERRIDES --- */
+.note-editor.note-frame {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+.note-editing-area {
+    background-color: #222 !important; 
+    color: white !important;
+}
+.note-toolbar {
+    background-color: rgba(0,0,0,0.5) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+.note-btn {
+    color: white !important;
+    background: transparent !important;
+}

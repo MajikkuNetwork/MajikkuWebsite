@@ -5,12 +5,11 @@
 
     {% if announcements %}
         {% for post in announcements %}
-        <div class="announcement" style="border-left: 3px solid var(--secondary);">
-            <span class="date">{{ post.created_at }}</span>
+        <div class="announcement">
             <h3>{{ post.title }}</h3>
-            <p>{{ post.content }}</p>
+            <div style="margin-bottom: 10px;">{{ post.content | safe }}</div>
             <div style="margin-top: 10px; font-size: 0.8rem; color: var(--accent);">
-                Organized by {{ post.author }}
+                Organized by {{ post.author }} at {{ post.created_at }}
             </div>
         </div>
         {% endfor %}

@@ -1,6 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
 
+    <style>
+        /* NEW DROPDOWN STYLES TO MATCH ADMIN TAB */
+        select {
+            background-color: #1e2124; /* Dark background */
+            color: #ffffff; /* White Text */
+            border: 1px solid var(--accent, #00d4ff); /* Teal border using your accent var */
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Style the options inside the dropdown */
+        select option {
+            background-color: #1e2124;
+            color: #ffffff;
+            padding: 10px;
+        }
+
+        /* Add a glow effect when clicked/focused */
+        select:focus {
+            box-shadow: 0 0 5px var(--accent, #00d4ff);
+        }
+    </style>
+
     <h1>Majikku Network</h1>
     <p class="subtitle">Punishment Appeal Form</p>
 

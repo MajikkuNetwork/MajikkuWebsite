@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>The Archives</h1>
+    <p class="subtitle">History & Lore of Majikku</p>
+
+    {% if announcements %}
+        {% for post in announcements %}
+        <div class="announcement"> <h3>{{ post.title }}</h3>
+            <div style="margin-bottom: 10px;">{{ post.content | safe }}</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: #aaa;">
+                Recorded by {{ post.author }} on {{ post.created_at }}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; color: #aaa;">The pages of history are blank...</p>
+    {% endif %}
+{% endblock %}

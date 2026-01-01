@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+
+    <style>
+        .admin-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+        .majikku-input {
+            width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;
+            color: white; font-family: 'Inter', sans-serif; margin-bottom: 20px;
+        }
+        .submit-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white; border: none; padding: 12px 30px; font-family: 'Cinzel', serif;
+            font-weight: bold; cursor: pointer; border-radius: 4px; width: 100%;
+        }
+        /* Dark Mode Summernote Override */
+        .note-editor.note-frame { border: 1px solid rgba(255, 255, 255, 0.1) !important; background: rgba(255, 255, 255, 0.05); }
+        .note-editing-area { background-color: #222 !important; color: white !important; }
+        .note-toolbar { background-color: rgba(0,0,0,0.5) !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+        .note-btn { color: white !important; background: transparent !important; }
+    </style>
+
+    <h1>Edit Post</h1>
+    <p class="subtitle">Update Announcement</p>
+
+    <div class="admin-box">
+        <form method="POST">
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Title</label>
+            <input type="text" name="title" class="majikku-input" value="{{ post.title }}" required>
+            
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Content</label>
+            <textarea id="summernote" name="content">{{ post.content }}</textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="submit-btn">Update Post</button>
+                <a href="/admin" class="submit-btn" style="background: rgba(255,255,255,0.1); text-align: center; text-decoration: none;">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        $('#summernote').summernote({
+            height: 300,
+            toolbar: [
+              ['style', ['style']],
+              ['font', ['bold', 'underline', 'clear']],
+              ['color', ['color']],
+              ['para', ['ul', 'ol', 'paragraph']],
+              ['table', ['table']],
+              ['insert', ['link', 'picture', 'video']],
+              ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    </script>
+{% endblock %}

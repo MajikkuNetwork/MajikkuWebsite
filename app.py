@@ -3,7 +3,7 @@ import requests
 import os
 import time
 import sqlite3
-import mysql.connector # Required for Game DB
+import mysql.connector 
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,8 +18,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 
 # Webhooks
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") # For Staff Apps
-APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") # For Ban Appeals
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
+APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") 
 
 REDIRECT_URI = "http://127.0.0.1:5000/callback" 
 API_ENDPOINT = 'https://discord.com/api/v10'
@@ -32,6 +32,9 @@ ADMIN_ROLE_IDS = [
 
 # ID allowed to post Events only
 LEAD_COORDINATOR_ID = "1207778273791184927"
+
+# ID allowed to post Lore only (NEW)
+LEAD_STORYTELLER_ID = "1452004814375616765"
 
 # --- DATABASE SETUP (WEBSITE: SQLite) ---
 def init_sqlite_db():
@@ -62,22 +65,17 @@ def get_hytale_profile(discord_id):
             password=os.getenv("MYSQL_PASSWORD"),
             database=os.getenv("MYSQL_DB")
         )
-        # Using dictionary=True to access columns by name (e.g., row['username'])
         cursor = conn.cursor(dictionary=True) 
-        
-        # We query based on the discord_id column from your schema image
         query = "SELECT username, hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1"
         cursor.execute(query, (discord_id,))
         result = cursor.fetchone()
-        
         conn.close()
         return result
-        
     except Exception as e:
         print(f"MySQL Connection Error: {e}")
         return None
 
-# --- STAFF PAGE CONFIGURATION ---
+# --- STAFF PAGE CONFIGURATION (RESTORED) ---
 STAFF_GROUPS = [
     {"name": "Leadership", "roles": [{"id": "1207778262378487918", "title": "Owner"}, {"id": "1207778264819572836", "title": "Administrator"}]},
     {"name": "Team Leads", "roles": [{"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535925606715533", "title": "Lead Tester"}]},
@@ -94,64 +92,90 @@ staff_cache = {"data": None, "timestamp": 0}
 
 # --- HELPERS ---
 def get_staff_data():
+    """Restored Logic: Matches roles to specific titles under headers."""
     if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]:
         return staff_cache["data"]
 
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members?limit=1000", headers=headers)
-    
-    if response.status_code != 200:
-        return {}
-
-    members = response.json()
-    grouped_staff = {group["name"]: [] for group in STAFF_GROUPS}
-    
-    for member in members:
-        user = member["user"]
-        user_roles = member["roles"]
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members?limit=1000", headers=headers)
         
-        avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
-        if user.get("avatar"):
-            avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+        if response.status_code != 200:
+            print(f"Error fetching staff: {response.text}")
+            return {}
 
-        for group in STAFF_GROUPS:
-            found_title = None
-            for role_def in group["roles"]:
-                if role_def["id"] in user_roles:
-                    found_title = role_def["title"]
-                    break
+        members = response.json()
+        grouped_staff = {group["name"]: [] for group in STAFF_GROUPS}
+        
+        for member in members:
+            user = member.get("user", {})
+            user_roles = member.get("roles", [])
             
-            if found_title:
-                staff_member = {
-                    "name": member.get("nick") or user["username"],
-                    "avatar": avatar_url,
-                    "role": found_title
-                }
-                grouped_staff[group["name"]].append(staff_member)
+            avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
+            if user.get("avatar"):
+                avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
 
-    staff_cache["data"] = grouped_staff
-    staff_cache["timestamp"] = time.time()
-    return grouped_staff
+            for group in STAFF_GROUPS:
+                found_title = None
+                for role_def in group["roles"]:
+                    if role_def["id"] in user_roles:
+                        found_title = role_def["title"]
+                        break # Found highest priority role for this group
+                
+                if found_title:
+                    staff_member = {
+                        "name": member.get("nick") or user.get("username"),
+                        "avatar": avatar_url,
+                        "role": found_title
+                    }
+                    grouped_staff[group["name"]].append(staff_member)
+
+        staff_cache["data"] = grouped_staff
+        staff_cache["timestamp"] = time.time()
+        return grouped_staff
+    except Exception as e:
+        print(f"Exception in get_staff_data: {e}")
+        return {}
 
 def check_is_admin(user_id):
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-    if response.status_code == 200:
-        member_data = response.json()
-        roles = member_data.get('roles', [])
-        for role_id in roles:
-            if role_id in ADMIN_ROLE_IDS:
-                return True
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if response.status_code == 200:
+            member_data = response.json()
+            roles = member_data.get('roles', [])
+            for role_id in roles:
+                if role_id in ADMIN_ROLE_IDS:
+                    return True
+    except:
+        pass
     return False
 
 def check_is_coordinator(user_id):
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-    if response.status_code == 200:
-        member_data = response.json()
-        roles = member_data.get('roles', [])
-        if LEAD_COORDINATOR_ID in roles:
-            return True
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if response.status_code == 200:
+            member_data = response.json()
+            roles = member_data.get('roles', [])
+            if LEAD_COORDINATOR_ID in roles:
+                return True
+    except:
+        pass
+    return False
+
+# NEW: Check for Storyteller Lead
+def check_is_storyteller(user_id):
+    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if response.status_code == 200:
+            member_data = response.json()
+            roles = member_data.get('roles', [])
+            if LEAD_STORYTELLER_ID in roles:
+                return True
+    except:
+        pass
     return False
 
 # --- ROUTES ---
@@ -171,6 +195,20 @@ def events():
     posts = conn.execute("SELECT * FROM announcements WHERE category='EVENT' ORDER BY id DESC").fetchall()
     conn.close()
     return render_template('events.html', user=session.get('user'), announcements=posts)
+
+# NEW: Separate Lore Route
+@app.route('/lore')
+def lore():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    posts = conn.execute("SELECT * FROM announcements WHERE category='LORE' ORDER BY id DESC").fetchall()
+    conn.close()
+    return render_template('lore.html', user=session.get('user'), announcements=posts)
+
+# NEW: Separate Rules Route
+@app.route('/rules')
+def rules():
+    return render_template('rules.html', user=session.get('user'))
 
 @app.route('/socials')
 def socials():
@@ -203,18 +241,26 @@ def callback():
     }
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     
-    token_resp = requests.post(f'{API_ENDPOINT}/oauth2/token', data=data, headers=headers)
-    access_token = token_resp.json().get('access_token')
+    try:
+        token_resp = requests.post(f'{API_ENDPOINT}/oauth2/token', data=data, headers=headers)
+        token_resp.raise_for_status()
+        access_token = token_resp.json().get('access_token')
 
-    user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {access_token}'})
-    user_data = user_resp.json()
-    
-    is_admin = check_is_admin(user_data['id'])
-    is_coord = check_is_coordinator(user_data['id'])
-    
-    session['user'] = user_data
-    session['is_admin'] = is_admin
-    session['is_coord'] = is_coord
+        user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {access_token}'})
+        user_data = user_resp.json()
+        
+        # Check permissions
+        is_admin = check_is_admin(user_data['id'])
+        is_coord = check_is_coordinator(user_data['id'])
+        is_story = check_is_storyteller(user_data['id']) 
+        
+        session['user'] = user_data
+        session['is_admin'] = is_admin
+        session['is_coord'] = is_coord
+        session['is_story'] = is_story
+        
+    except Exception as e:
+        return f"Login Error: {e}"
     
     return redirect(url_for('home'))
 
@@ -223,20 +269,32 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# --- ADMIN ROUTES ---
+# --- ADMIN ROUTES (RICH TEXT SUPPORT) ---
 @app.route('/admin')
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
-    if not session.get('is_admin') and not session.get('is_coord'):
+    
+    # Permission Gate (Allows Admin, Coord, OR Storyteller)
+    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story')):
         return render_template('base.html', content="<h1>Access Denied</h1>")
 
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     
+    # Filter posts based on permission
     if session.get('is_admin'):
         posts = conn.execute('SELECT * FROM announcements ORDER BY id DESC').fetchall()
     else:
-        posts = conn.execute("SELECT * FROM announcements WHERE category='EVENT' ORDER BY id DESC").fetchall()
+        # Build allowed categories list
+        allowed = []
+        if session.get('is_coord'): allowed.append("'EVENT'")
+        if session.get('is_story'): allowed.append("'LORE'")
+        
+        if allowed:
+            query = f"SELECT * FROM announcements WHERE category IN ({','.join(allowed)}) ORDER BY id DESC"
+            posts = conn.execute(query).fetchall()
+        else:
+            posts = []
 
     conn.close()
     return render_template('admin.html', user=session.get('user'), announcements=posts)
@@ -244,18 +302,16 @@ def admin():
 @app.route('/admin/post', methods=['POST'])
 def admin_post():
     if 'user' not in session: return "Unauthorized", 403
-    if not session.get('is_admin') and not session.get('is_coord'):
-        return "Unauthorized", 403
-
+    
     title = request.form['title']
-    content = request.form['content']
+    content = request.form['content'] # HTML from Summernote
     category = request.form.get('category')
     author = session['user']['username']
 
-    if category == 'NEWS' and not session.get('is_admin'):
-        return "Unauthorized: Only Admins can post to News.", 403
-    if category == 'EVENT' and not (session.get('is_admin') or session.get('is_coord')):
-        return "Unauthorized: You cannot post to Events.", 403
+    # Strict Permission Checks
+    if category == 'NEWS' and not session.get('is_admin'): return "Unauthorized", 403
+    if category == 'EVENT' and not (session.get('is_admin') or session.get('is_coord')): return "Unauthorized", 403
+    if category == 'LORE' and not (session.get('is_admin') or session.get('is_story')): return "Unauthorized", 403
 
     conn = sqlite3.connect('database.db')
     conn.execute('INSERT INTO announcements (title, content, category, author) VALUES (?, ?, ?, ?)',
@@ -263,6 +319,42 @@ def admin_post():
     conn.commit()
     conn.close()
     return redirect(url_for('admin'))
+
+@app.route('/admin/edit/<int:id>', methods=['GET', 'POST'])
+def admin_edit(id):
+    if 'user' not in session: return redirect(url_for('login'))
+
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        conn.execute("UPDATE announcements SET title = ?, content = ? WHERE id = ?", (title, content, id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('admin'))
+
+    # GET request - show the form
+    post = conn.execute("SELECT * FROM announcements WHERE id = ?", (id,)).fetchone()
+    
+    if not post:
+        conn.close()
+        return "Post not found", 404
+        
+    # Permission Check
+    cat = post['category']
+    allowed = False
+    if session.get('is_admin'): allowed = True
+    elif cat == 'EVENT' and session.get('is_coord'): allowed = True
+    elif cat == 'LORE' and session.get('is_story'): allowed = True
+
+    if not allowed:
+        conn.close()
+        return "Unauthorized to edit this post", 403
+
+    conn.close()
+    return render_template('edit_post.html', post=post, user=session.get('user'))
 
 @app.route('/admin/delete/<int:id>')
 def admin_delete(id):
@@ -276,21 +368,21 @@ def admin_delete(id):
     if not row:
         conn.close()
         return redirect(url_for('admin'))
-    category = row[0]
     
-    can_delete = False
-    if session.get('is_admin'):
-        can_delete = True
-    elif session.get('is_coord') and category == 'EVENT':
-        can_delete = True
-        
-    if can_delete:
+    cat = row[0]
+    allowed = False
+    if session.get('is_admin'): allowed = True
+    elif cat == 'EVENT' and session.get('is_coord'): allowed = True
+    elif cat == 'LORE' and session.get('is_story'): allowed = True
+
+    if allowed:
         conn.execute('DELETE FROM announcements WHERE id = ?', (id,))
         conn.commit()
+    
     conn.close()
     return redirect(url_for('admin'))
 
-# --- APPLICATION ROUTES ---
+# --- APPLICATION ROUTES (Webhook Enabled) ---
 @app.route('/apply')
 def apply():
     if 'user' not in session: return redirect(url_for('login'))
@@ -330,21 +422,22 @@ def submit_application():
         if answer:
             safe_answer = (answer[:1000] + '...') if len(answer) > 1000 else answer
             embed["fields"].append({"name": question, "value": safe_answer, "inline": False})
-
+#
     payload = {
         "thread_name": f"APP - {team_name} - {data.get('hytale_name', user['username'])}",
         "embeds": [embed]
     }
     
-    # Send to General Staff Webhook
+    # Send to Staff Webhook
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        if DISCORD_WEBHOOK_URL:
+            requests.post(DISCORD_WEBHOOK_URL, json=payload)
         return jsonify({'success': True})
     except Exception as e:
         print(f"Webhook Error: {e}")
         return jsonify({'error': 'Failed to send'}), 500
 
-# --- APPEAL ROUTES ---
+# --- APPEAL ROUTES (Webhook Enabled) ---
 @app.route('/appeal')
 def appeal():
     if 'user' not in session: return redirect(url_for('login'))
@@ -390,8 +483,9 @@ def submit_appeal():
     }
     
     try:
-        # Send to SPECIAL APPEALS Webhook
-        requests.post(APPEALS_WEBHOOK_URL, json=payload)
+        # Send to APPEAL Webhook
+        if APPEALS_WEBHOOK_URL:
+            requests.post(APPEALS_WEBHOOK_URL, json=payload)
         return jsonify({'success': True})
     except Exception as e:
         print(f"Error sending appeal webhook: {e}")
