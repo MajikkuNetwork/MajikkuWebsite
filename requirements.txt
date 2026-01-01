@@ -1,2 +1,4 @@
-flask
+Flask
 requests
+python-dotenv
+mysql-connector-python
