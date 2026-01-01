@@ -1,18 +1,19 @@
-# 1. Use a lightweight version of Python
-FROM python:3.9-slim
+# Use a lightweight Python version
+FROM python:3.11-slim
 
-# 2. Set the working directory inside the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# 3. Copy the requirements file and install dependencies
+# Copy the requirements file and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Copy the rest of your app code
+# Copy the rest of your application code
 COPY . .
 
-# 5. Tell Docker we are using port 5000
+# Expose the port Flask runs on
 EXPOSE 5000
 
-# 6. The command to run your app
-CMD ["python", "app.py"]
+# Command to run the app using Gunicorn
+# "app:app" means "look in app.py for the object named app"
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
