@@ -442,3 +442,83 @@ input[type="range"] {
     color: white !important;
     background: transparent !important;
 }
+
+p.desc-text {
+    text-align: center;
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS (Add to bottom)
+   ========================================= */
+
+@media screen and (max-width: 768px) {
+
+    /* 1. Fix Navigation Bar */
+    .navbar {
+        flex-direction: column; /* Stack Logo on top of links */
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap; /* Allow links to wrap to next line if needed */
+        justify-content: center; /* Center them */
+        width: 100%;
+    }
+
+    .nav-links a {
+        margin: 5px 10px; /* Even spacing around links */
+        font-size: 0.85rem; /* Slightly smaller text */
+    }
+
+    /* 2. Fix Main Container Padding */
+    .container {
+        width: 95%; /* Use more screen width */
+        padding: 20px; /* Reduce padding from 50px to 20px */
+        margin-top: 20px;
+    }
+
+    /* 3. Fix Typography sizing */
+    h1 {
+        font-size: 2rem; /* Shrink the big title */
+        letter-spacing: 1px;
+    }
+    
+    .subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 25px;
+    }
+
+    /* 4. Fix Role Grid (Buttons) */
+    .role-grid {
+        grid-template-columns: 1fr; /* Force 1 column (stack buttons vertically) */
+    }
+    
+    /* 5. Fix Staff Grid */
+    .staff-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Allow smaller cards */
+        gap: 15px;
+    }
+    
+    .staff-card {
+        padding: 20px 10px; /* Reduce card padding */
+    }
+
+    /* 6. Fix Form Inputs */
+    /* This overrides the 'display:flex' inline styles you used for Age/Timezone */
+    form > div[style*="display: flex"] {
+        flex-direction: column !important; /* Stack inputs vertically */
+        gap: 15px !important;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    /* 7. Hide the ghost background effect on mobile to save battery/performance */
+    body::before {
+        filter: blur(5px) brightness(0.4); /* Less blur needed on small screens */
+        transform: scale(1);
+    }
+}
