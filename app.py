@@ -404,9 +404,13 @@ def submit_application():
     if user.get("avatar"):
         avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
 
-    embed = {
+    # --- STEP 1: CREATE THE THREAD (Safe Mode) ---
+    # We only send the Basic Info here. Since this is small, it guarantees the thread is created successfully.
+    
+    info_embed = {
         "title": f"New Application: {team_name}",
         "color": 10182117, # Green-ish
+        "thumbnail": {"url": avatar_url} if avatar_url else {},
         "fields": [
             {"name": "Discord User", "value": f"<@{user['id']}> ({user['username']})", "inline": False},
             {"name": "Hytale Name", "value": data.get('hytale_name', 'N/A'), "inline": True},
@@ -416,26 +420,81 @@ def submit_application():
         ],
         "footer": {"text": "Majikku Network Application System"}
     }
-    if avatar_url: embed["thumbnail"] = {"url": avatar_url}
 
-    for question, answer in data.get('answers', {}).items():
-        if answer:
-            safe_answer = (answer[:1000] + '...') if len(answer) > 1000 else answer
-            embed["fields"].append({"name": question, "value": safe_answer, "inline": False})
-#
-    payload = {
-        "thread_name": f"APP - {team_name} - {data.get('hytale_name', user['username'])}",
-        "embeds": [embed]
-    }
+    # IMPORTANT: We add '?wait=true' to the URL.
+    # This tells Discord to reply with the message data so we can get the Thread ID.
+    thread_start_url = f"{DISCORD_WEBHOOK_URL}?wait=true"
     
-    # Send to Staff Webhook
+    start_payload = {
+        "thread_name": f"APP - {team_name} - {data.get('hytale_name', user['username'])}",
+        "embeds": [info_embed]
+    }
+
+    thread_id = None
+
     try:
+        # 1. Post the Initial Thread Starter
         if DISCORD_WEBHOOK_URL:
-            requests.post(DISCORD_WEBHOOK_URL, json=payload)
-        return jsonify({'success': True})
+            resp = requests.post(thread_start_url, json=start_payload)
+            resp.raise_for_status() # Check for errors
+            
+            # 2. Extract the Thread ID from the response
+            # (In Discord webhooks, the channel_id of the returned message is the Thread ID)
+            message_data = resp.json()
+            thread_id = message_data.get('channel_id')
+            
     except Exception as e:
-        print(f"Webhook Error: {e}")
-        return jsonify({'error': 'Failed to send'}), 500
+        print(f"Webhook Error (Thread Creation): {e}")
+        return jsonify({'error': 'Failed to create application thread'}), 500
+
+    # --- STEP 2: SEND ANSWERS (Chunks) ---
+    # Now we loop through the answers and send them into the thread we just created.
+    # If the answers are long, we split them into multiple messages.
+
+    if thread_id:
+        followup_url = f"{DISCORD_WEBHOOK_URL}?thread_id={thread_id}"
+        
+        current_fields = []
+        current_char_count = 0
+        
+        answers = data.get('answers', {})
+        
+        # Helper function to send a batch of answers
+        def send_batch(fields_to_send):
+            if not fields_to_send: return
+            embed = {
+                "color": 10182117,
+                "fields": fields_to_send
+            }
+            try:
+                requests.post(followup_url, json={"embeds": [embed]})
+            except Exception as e:
+                print(f"Error sending answer batch: {e}")
+
+        for question, answer in answers.items():
+            if not answer: continue
+            
+            # 1. Safety Truncate (Discord field value max is 1024)
+            safe_answer = (answer[:1000] + '...') if len(answer) > 1000 else answer
+            
+            # 2. Check Limits
+            # - If we have 25 fields (Discord max per embed)
+            # - OR if we are approaching the character limit (safe buffer at 4000)
+            if len(current_fields) >= 25 or (current_char_count + len(safe_answer) > 4000):
+                send_batch(current_fields)
+                current_fields = [] # Reset for next batch
+                current_char_count = 0
+                # Sleep briefly to be nice to Discord API
+                time.sleep(0.5) 
+                
+            current_fields.append({"name": question, "value": safe_answer, "inline": False})
+            current_char_count += len(safe_answer)
+
+        # 3. Send whatever is left in the list
+        if current_fields:
+            send_batch(current_fields)
+
+    return jsonify({'success': True})
 
 # --- APPEAL ROUTES (Webhook Enabled) ---
 @app.route('/appeal')
