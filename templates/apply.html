@@ -42,6 +42,21 @@
         select:focus {
             box-shadow: 0 0 5px var(--accent, #00d4ff);
         }
+
+        /* --- NEW: CHARACTER COUNTER STYLES --- */
+        .char-count {
+            display: block;
+            text-align: right;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .char-count.limit-reached {
+            color: #ff5555; /* Red when full */
+            font-weight: bold;
+        }
     </style>
 
     <h1>Majikku Network</h1>
@@ -78,11 +93,6 @@
         </div>
 
         <div class="form-group">
-            <label>What are your pronouns?</label>
-            <input type="text" id="pronouns" placeholder="e.g. He/Him, They/Them">
-        </div>
-
-        <div class="form-group">
             <label>How many hours can you realistically contribute daily/weekly?</label>
             <div class="desc-text">This isn't a determining factor, just to gauge activity.</div>
             <input type="text" id="availability" placeholder="e.g. 2 hours a day" required>
@@ -90,21 +100,22 @@
 
         <div class="form-group">
             <label>What language(s) are you fluent in?</label>
-            <input type="text" id="languages">
+            <input type="text" id="languages" class="counted-input" maxlength="200">
+            <small class="char-count">0 / 200</small>
         </div>
 
         <h2 class="section-title">Select Your Path</h2>
         <p style="text-align:center; margin-bottom: 20px;">What team are you applying for?</p>
         
         <div class="role-grid">
-            <div class="role-btn" onclick="showTeam('mod', this)">Moderation</div>
-            <div class="role-btn" onclick="showTeam('dev', this)">Development</div>
+            <div class="role-btn" onclick="showTeam('mod', this)">Moderation Team</div>
+            <div class="role-btn" onclick="showTeam('dev', this)">Development Team</div>
             <div class="role-btn" onclick="showTeam('build', this)">Build Team</div>
-            <div class="role-btn" onclick="showTeam('artist', this)">Artist</div>
-            <div class="role-btn" onclick="showTeam('story', this)">Story Teller</div>
-            <div class="role-btn" onclick="showTeam('coordinator', this)">Coordinator</div>
-            <div class="role-btn" onclick="showTeam('model', this)">Modeling</div>
-            <div class="role-btn" onclick="showTeam('tester', this)">Tester</div>
+            <div class="role-btn" onclick="showTeam('artist', this)">Artist Team</div>
+            <div class="role-btn" onclick="showTeam('story', this)">Story Teller Team</div>
+            <div class="role-btn" onclick="showTeam('coordinator', this)">Coordinator Team</div>
+            <div class="role-btn" onclick="showTeam('model', this)">Modeling Team</div>
+            <div class="role-btn" onclick="showTeam('tester', this)">Tester Team</div>
         </div>
 
 
@@ -116,11 +127,12 @@
 
             <div class="form-group">
                 <label>Why do you want to join the Moderation Team?</label>
-                <textarea rows="4" class="team-answer" data-question="Why Mod Team?"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="600" data-question="Why Mod Team?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>How confident are you in your ability to speak to other players/staff? Do you think you have good communication/conversational skills?</label>
+                <label>How confident are you in your ability to speak to other players/staff?</label>
                 <div class="range-wrap">
                     <span>1</span>
                     <input type="range" min="1" max="10" class="team-answer" data-question="Comm Confidence" oninput="this.nextElementSibling.value = this.value">
@@ -130,32 +142,38 @@
             </div>
 
             <div class="form-group">
-                <label>Have you ever been a staff member on Majikku, or any where else? If you were please describe your position(s).</label>
-                <textarea rows="3" class="team-answer" data-question="Past Experience"></textarea>
+                <label>Have you ever been a staff member on Majikku, or any where else?</label>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Past Experience"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <h4>Scenario Questions</h4>
 
             <div class="form-group">
                 <label>You observe a player that looks to be using hacks/unapproved mods on the network. Please describe in detail what you would do.</label>
-                <textarea rows="4" class="team-answer" data-question="Scenario: Hacker"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Hacker"></textarea>
+                <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
                 <label>The server is experiencing technical issues, but you are the only staff member online. Please describe in detail what you would do.</label>
-                <textarea rows="4" class="team-answer" data-question="Scenario: Tech Issues"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Tech Issues"></textarea>
+                <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
                 <label>You see that there is an argument between players or even staff members. Please describe in detail what you would do.</label>
-                <textarea rows="4" class="team-answer" data-question="Scenario: Argument"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Argument"></textarea>
+                <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
                 <label>You are asked a question that you don't know the answer to. What would you do?</label>
-                <textarea rows="3" class="team-answer" data-question="Scenario: Unknown Question"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Scenario: Unknown Question"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
             <div class="form-group">
-                <label>A friend of yours starts breaking the rules, and you are the only staff seeing it. What would you do.</label>
-                <textarea rows="3" class="team-answer" data-question="Scenario: Friend Breaking Rules"></textarea>
-                <div class="desc-text" style="margin-top:5px;">Please be honest, If you wouldn't punish, describe why, and give your thinking.</div>
+                <label>A friend of yours starts breaking the rules, and you are the only staff seeing it. What would you do</label>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Scenario: Friend Breaking Rules"></textarea>
+                <small class="char-count">0 / 600</small>
+                <div class="desc-text" style="margin-top:5px;">Please be honest, If you wouldn't punish, describe why.</div>
             </div>
             <div class="form-group">
                 <label>Would you be willing to assist with tickets?</label>
@@ -168,41 +186,46 @@
         </div>
 
         <div id="dev" class="dynamic-content">
-            <h3>Development Team Application    
-            </h3>
+            <h3>Development Team Application</h3>
             <div class="team-description">
                 The Development Team is the engine that powers Majikku, and we are looking for technical wizards proficient in Java, Python, C#, or Hytale-specific scripting to help bring our custom features to life. Accepted Applicants will begin their journey as a <strong>Jr. Developer</strong>, an entry-level role focused on learning the server’s codebase. In this position, you will work closely with the Lead Developer to handle smaller tasks such as configuring existing plugins, fixing minor bugs, and assisting the main Developers with testing code in a live environment. To succeed in this role, we require proficiency in at least one relevant coding language, a willingness to learn, and the ability to solve complex logic puzzles.  
             </div>
 
             <div class="form-group">
                 <label>Why are you interested in joining the team?</label>
-                <textarea rows="3" class="team-answer" data-question="Why Dev Team?"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Dev Team?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
                 <label>Do you have previous experience?</label>
-                <textarea rows="3" class="team-answer" data-question="Dev Experience"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Dev Experience"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
                 <label>How well can you spot bugs and errors?</label>
-                <textarea rows="2" class="team-answer" data-question="Bug Spotting Ability"></textarea>
+                <textarea rows="2" class="team-answer counted-input" maxlength="400" data-question="Bug Spotting Ability"></textarea>
+                <small class="char-count">0 / 400</small>
             </div>
 
             <div class="form-group">
                 <label>Are you willing to learn new skills?</label>
-                <textarea rows="2" class="team-answer" data-question="Willing to Learn"></textarea>
+                <textarea rows="2" class="team-answer counted-input" maxlength="300" data-question="Willing to Learn"></textarea>
+                <small class="char-count">0 / 300</small>
             </div>
 
             <div class="form-group">
                 <label>Programming Language Experience</label>
-                <textarea rows="4" class="team-answer" data-question="Programming Languages"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="600" data-question="Programming Languages"></textarea>
+                <small class="char-count">0 / 600</small>
                 <div class="desc-text">List any languages, frameworks, or relevant tech you know.</div>
             </div>
 
             <div class="form-group">
                 <label>Tell us about yourself / Project Ideas</label>
-                <textarea rows="4" class="team-answer" data-question="Dev Bio/Ideas"></textarea>
+                <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Dev Bio/Ideas"></textarea>
+                <small class="char-count">0 / 800</small>
             </div>
         </div>
 
@@ -214,12 +237,33 @@
 
             <div class="form-group">
                 <label>Why do you want to be a builder?</label>
-                <textarea rows="3" class="team-answer" data-question="Why Builder?"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Builder?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
                 <label>Favorite Building Style?</label>
-                <input type="text" class="team-answer" data-question="Build Style">
+                <select class="team-answer" data-question="Build Style">
+                    <option value="" disabled selected>Select a style...</option>
+                    
+                    <optgroup label="Server Themes (Priority)">
+                        <option value="High Fantasy">High Fantasy (Magical, Wizard Towers)</option>
+                        <option value="Medieval">Medieval (Castles, Villages)</option>
+                        <option value="Rustic">Rustic (Nature, Cottages, Organic)</option>
+                        <option value="Elven">Elven / Fae</option>
+                        <option value="Dwarven">Dwarven / Underground</option>
+                    </optgroup>
+
+                    <optgroup label="Other Styles">
+                        <option value="Steampunk">Steampunk / Industrial</option>
+                        <option value="Gothic">Gothic / Dark</option>
+                        <option value="Oriental">Oriental / Asian Architecture</option>
+                        <option value="Greco-Roman">Greco-Roman (Classical)</option>
+                        <option value="Modern">Modern / Contemporary</option>
+                        <option value="Sci-Fi">Cyberpunk / Sci-Fi</option>
+                        <option value="Other">Other (Please specify in portfolio)</option>
+                    </optgroup>
+                </select>
             </div>
 
             <div class="form-group">
@@ -233,18 +277,14 @@
 
             <div class="form-group">
                 <label>Self-Assessment (1-10)</label>
-                
                 <div class="desc-text" style="margin-top:10px;">Attention to Detail</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Detail"><output>5</output></div>
-
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Detail"><output>10</output></div>
                 <div class="desc-text" style="margin-top:10px;">Terraforming</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Terraforming"><output>5</output></div>
-
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Terraforming"><output>10</output></div>
                 <div class="desc-text" style="margin-top:10px;">Interiors</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Interior"><output>5</output></div>
-
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Interior"><output>10</output></div>
                 <div class="desc-text" style="margin-top:10px;">Color Palettes</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Palettes"><output>5</output></div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Palettes"><output>10</output></div>
             </div>
 
             <div class="form-group">
@@ -261,17 +301,45 @@
 
             <div class="form-group">
                 <label>Why do you want to join the Art Department?</label>
-                <textarea rows="3" class="team-answer" data-question="Why Artist?"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Artist?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>Do you have experience with digital mediums?</label>
-                <textarea rows="2" class="team-answer" data-question="Digital Experience"></textarea>
+                <label>Experience Level with Digital Mediums</label>
+                <select class="team-answer" data-question="Digital Experience">
+                    <option value="" disabled selected>Select your experience level...</option>
+                    <option value="Beginner">Beginner (Learning / <1 Year)</option>
+                    <option value="Intermediate">Intermediate (Hobbyist / 1-3 Years)</option>
+                    <option value="Advanced">Advanced (Freelance / 3+ Years)</option>
+                    <option value="Professional">Professional (Industry Standard / Paid)</option>
+                </select>
             </div>
 
             <div class="form-group">
                 <label>Preferred Art Medium?</label>
-                <input type="text" class="team-answer" data-question="Preferred Medium" placeholder="e.g. Pixel Art, Drawing, Textures">
+                <select class="team-answer" data-question="Preferred Medium">
+                    <option value="" disabled selected>Select your main medium...</option>
+                    
+                    <optgroup label="Server Essentials">
+                        <option value="Pixel Art">Pixel Art (Items, Icons, UI)</option>
+                        <option value="Texturing">3D Texturing (Models, Skins)</option>
+                        <option value="Vector Art">Vector Art (Logos, Clean UI)</option>
+                    </optgroup>
+
+                    <optgroup label="Illustration & Design">
+                        <option value="Concept Art">Concept Art (Environmental, Character)</option>
+                        <option value="Digital Painting">Digital Painting / Promotional Art</option>
+                        <option value="Graphic Design">Graphic Design (Social Media, Banners)</option>
+                    </optgroup>
+
+                    <optgroup label="Other">
+                        <option value="Voxel Art">Voxel Art</option>
+                        <option value="Animation">Animation (2D)</option>
+                        <option value="Traditional">Traditional Art (Scanned)</option>
+                        <option value="Other">Other</option>
+                    </optgroup>
+                </select>
             </div>
 
             <div class="form-group">
@@ -284,14 +352,13 @@
                 <div class="range-wrap">
                     <span>1</span>
                     <input type="range" min="1" max="10" class="team-answer" data-question="Creativity Level" oninput="this.nextElementSibling.value = this.value">
-                    <output style="color:var(--accent); font-weight:bold; margin-left:10px;">5</output>
+                    <output style="color:var(--accent); font-weight:bold; margin-left:10px;">10</output>
                     <span>10</span>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Portfolio Link (Required)</label>
-                <div class="desc-text">Imgur album or ArtStation link.</div>
                 <input type="text" class="team-answer" data-question="Art Portfolio">
             </div>
         </div>
@@ -304,20 +371,18 @@
 
             <div class="form-group">
                 <label>Why join the Creative Team?</label>
-                <textarea rows="3" class="team-answer" data-question="Why Writer?"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Writer?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
                 <label>Writing Skills Self-Assessment (1-10)</label>
-                
                 <div class="desc-text" style="margin-top:10px;">Grammar/Punctuation</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Grammar"><output>5</output></div>
-
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Grammar"><output>10</output></div>
                 <div class="desc-text" style="margin-top:10px;">Story Structure</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Structure"><output>5</output></div>
-
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Structure"><output>10</output></div>
                 <div class="desc-text" style="margin-top:10px;">English Fluency</div>
-                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Fluency"><output>5</output></div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Fluency"><output>10</output></div>
             </div>
 
             <div class="form-group">
@@ -333,12 +398,14 @@
 
             <div class="form-group">
                 <label>Your Story (Min 5 Sentences)</label>
-                <textarea rows="6" class="team-answer" data-question="Story Submission"></textarea>
+                <textarea rows="6" class="team-answer counted-input" maxlength="1500" data-question="Story Submission"></textarea>
+                <small class="char-count">0 / 1500</small>
             </div>
 
             <div class="form-group">
                 <label>Story Synopsis (1 Sentence summary)</label>
-                <input type="text" class="team-answer" data-question="Story Synopsis">
+                <input type="text" class="team-answer counted-input" maxlength="300" data-question="Story Synopsis">
+                <small class="char-count">0 / 300</small>
             </div>
         </div>
 
@@ -352,22 +419,24 @@
                 <label>Which focus are you applying for?</label>
                 <select class="team-answer" data-question="Coordinator Focus">
                     <option value="Event Coordinator">Event Coordinator</option>
-                    <option value="Social Media">Social Media Manager</option>
+                    <option value="Social Media Coordinator">Social Media Coordinator</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>Why do you want to join this team?</label>
-                <textarea rows="3" class="team-answer" data-question="Why Coordinator?"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Coordinator?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
                 <label>Do you have experience managing communities or socials?</label>
-                <textarea rows="3" class="team-answer" data-question="Coord Experience"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Coord Experience"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>Link to previous work (Event videos, Social posts)</label>
+                <label>Link to previous work</label>
                 <input type="text" class="team-answer" data-question="Coord Portfolio">
             </div>
         </div>
@@ -375,14 +444,64 @@
         <div id="model" class="dynamic-content">
             <h3>Modeling Team Application</h3>
             <div class="team-description">
-                The Modeling Team brings the unique flavor of Majikku to life through custom assets that define the server’s aesthetic. Accepted Applicants will begin their journey as a <strong>Modeler</strong>, responsible for creating the essential items that fill the world, such as furniture, weapons, food, and decorative props. You must ensure that all models have accurate hitboxes and blend seamlessly with the default Hytale aesthetic. Applicants must have experience with Blockbench, and solid understanding of texturing, and a portfolio of past work to be considered.  
+                The Modeling Team brings the unique flavor of Majikku to life through custom assets that define the server’s aesthetic. Accepted Applicants will begin their journey as a <strong>Modeler</strong>, responsible for creating the essential items that fill the world, such as furniture, weapons, food, and decorative props. You must ensure that all models have accurate hitboxes and blend seamlessly with the default Hytale aesthetic.
             </div>
+
             <div class="form-group">
-                <label>What software do you use? (Blockbench, Blender, etc.)</label>
-                <input type="text" class="team-answer" data-question="Software Used">
+                <label>Why do you want to join the Modeling Team?</label>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Modeler?"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
+
+            <div class="form-group">
+                <label>Primary Software Proficiency</label>
+                <select class="team-answer" data-question="Software Used">
+                    <option value="" disabled selected>Select your main tool...</option>
+                    <option value="Blockbench">Blockbench (Standard)</option>
+                    <option value="Blender">Blender</option>
+                    <option value="Cubik Studio">Cubik Studio</option>
+                    <option value="MagicaVoxel">MagicaVoxel</option>
+                    <option value="Other">Other (Cinema 4D, Maya, etc.)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>What do you prefer modeling?</label>
+                <select class="team-answer" data-question="Model Preference">
+                    <option value="" disabled selected>Select a preference...</option>
+                    <option value="Organic">Organic (Mobs, Creatures, Characters)</option>
+                    <option value="Hard Surface">Hard Surface (Weapons, Tools, Tech)</option>
+                    <option value="Furniture">Furniture & Decor (Static Props)</option>
+                    <option value="VFX">VFX & Particles</option>
+                    <option value="Generalist">Generalist (I do it all)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Can you animate your models?</label>
+                <select class="team-answer" data-question="Can Animate">
+                    <option value="No">No, static models only</option>
+                    <option value="Basic">Yes, basic movements (Idle, Walk)</option>
+                    <option value="Advanced">Yes, complex animations (Attack, death, emotes)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Skill Assessment (1-10)</label>
+                
+                <div class="desc-text" style="margin-top:10px;">Texturing / UV Mapping</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Texturing"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Low-Poly Efficiency</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Efficiency"><output>5</output></div>
+
+                <div class="desc-text" style="margin-top:10px;">Hytale Style Matching</div>
+                <div class="range-wrap"><input type="range" min="1" max="10" class="team-answer" data-question="Skill: Style Match"><output>5</output></div>
+            </div>
+
             <div class="form-group">
                 <label>Show us your models (Portfolio Link)</label>
+                <div class="desc-text">Sketchfab, ArtStation, or Imgur Album preferred.</div>
                 <input type="text" class="team-answer" data-question="Model Portfolio">
             </div>
         </div>
@@ -394,7 +513,8 @@
             </div>
             <div class="form-group">
                 <label>Do you have experience with bug testing?</label>
-                <textarea rows="3" class="team-answer" data-question="QA Experience"></textarea>
+                <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="QA Experience"></textarea>
+                <small class="char-count">0 / 600</small>
             </div>
             <div class="form-group">
                 <label>How detail-oriented are you? (1-10)</label>
@@ -417,12 +537,14 @@
 
         <div class="form-group">
             <label>Do you have any alternate accounts?</label>
-            <textarea rows="2" class="misc-answer" data-question="Alts"></textarea>
+            <textarea rows="2" class="misc-answer counted-input" maxlength="300" data-question="Alts"></textarea>
+            <small class="char-count">0 / 300</small>
         </div>
 
         <div class="form-group">
             <label>Do you have any issues with any players or staff?</label>
-            <textarea rows="3" class="misc-answer" data-question="Player/Staff Issues"></textarea>
+            <textarea rows="3" class="misc-answer counted-input" maxlength="600" data-question="Player/Staff Issues"></textarea>
+            <small class="char-count">0 / 600</small>
         </div>
 
         <div class="form-group">
@@ -478,6 +600,32 @@
                 btnElement.classList.add('active');
             }
         }
+
+        // --- NEW CHARACTER COUNTER LOGIC ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.counted-input');
+
+            inputs.forEach(input => {
+                const counter = input.nextElementSibling;
+                const max = input.getAttribute('maxlength');
+
+                const updateCount = () => {
+                    const currentLength = input.value.length;
+                    counter.innerText = `${currentLength} / ${max}`;
+                    
+                    if (currentLength >= max) {
+                        counter.classList.add('limit-reached');
+                    } else {
+                        counter.classList.remove('limit-reached');
+                    }
+                };
+
+                input.addEventListener('input', updateCount);
+                // Initialize on load
+                updateCount();
+            });
+        });
+        // -----------------------------------
 
         const form = document.getElementById('appForm');
         form.addEventListener('submit', async function(event) {
