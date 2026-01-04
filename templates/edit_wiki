@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+
+    <h1>{% if page %}Edit Wiki Page{% else %}Create Wiki Page{% endif %}</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="/admin" style="color: var(--text-muted); text-decoration: none;">&larr; Back to Admin</a>
+    </div>
+
+    <div class="admin-box">
+        <form method="POST">
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Page Title</label>
+            <input type="text" name="title" class="majikku-input" value="{{ page.title if page else '' }}" required placeholder="e.g. Getting Started">
+
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">URL Slug (Unique ID)</label>
+            {% if page %}
+                <input type="text" class="majikku-input" value="{{ page.slug }}" disabled style="opacity: 0.5; cursor: not-allowed;">
+            {% else %}
+                <input type="text" name="slug" class="majikku-input" placeholder="e.g. getting-started (No spaces)" required>
+                <div class="desc-text" style="margin-bottom: 15px;">Use hyphens instead of spaces. This will be the link: /wiki/your-slug</div>
+            {% endif %}
+
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Category</label>
+            <input type="text" name="category" class="majikku-input" value="{{ page.category if page else '' }}" list="wiki-cats" placeholder="Type or select category..." required>
+            <datalist id="wiki-cats">
+                <option value="General">
+                <option value="Lore">
+                <option value="Gameplay">
+                <option value="Items">
+                <option value="Server Info">
+            </datalist>
+
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Content</label>
+            <textarea id="summernote" name="content">{{ page.content if page else '' }}</textarea>
+
+            <button type="submit" class="submit-btn" style="margin-top: 20px;">Save Wiki Page</button>
+        </form>
+    </div>
+
+    <script>
+        $('#summernote').summernote({
+            placeholder: 'Write your wiki content here...',
+            tabsize: 2,
+            height: 400,
+            toolbar: [
+              ['style', ['style']],
+              ['font', ['bold', 'underline', 'clear']],
+              ['color', ['color']],
+              ['para', ['ul', 'ol', 'paragraph']],
+              ['table', ['table']],
+              ['insert', ['link', 'picture', 'video']],
+              ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 style="margin-bottom: 10px;">Majikku Wiki</h1>
+<p class="subtitle">Knowledge Base & Guides</p>
+
+<div class="wiki-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+    {% for category, pages in categories.items() %}
+    <div class="wiki-card" style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+        <h3 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">{{ category }}</h3>
+        <ul style="list-style: none; padding: 0;">
+            {% for page in pages %}
+            <li style="margin-bottom: 10px;">
+                <a href="/wiki/{{ page.slug }}" style="color: white; text-decoration: none; font-size: 1.1rem; display: flex; align-items: center;">
+                    <span style="color: var(--primary); margin-right: 10px;">➤</span>
+                    {{ page.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

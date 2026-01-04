@@ -9,6 +9,7 @@
     <p class="subtitle">Manage the Realm</p>
 
     <div class="admin-box">
+        <h3 style="color:var(--primary); margin-top:0;">Post Announcement</h3>
         <form action="/admin/post" method="POST">
             <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Title</label>
             <input type="text" name="title" class="majikku-input" placeholder="Enter title..." required>
@@ -55,6 +56,33 @@
             <p style="text-align:center; color:#aaa;">No posts found.</p>
         {% endif %}
     </div>
+
+    {% if session.get('is_admin') or session.get('is_story') %}
+    <h2 class="section-title">Manage Wiki Pages</h2>
+    <div class="admin-box">
+        <div style="text-align: right; margin-bottom: 20px;">
+            <a href="/admin/wiki/new" class="submit-btn" style="text-decoration: none; display: inline-block; width: auto; background: var(--secondary);">+ Create New Wiki Page</a>
+        </div>
+
+        {% if wiki_pages %}
+            {% for page in wiki_pages %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div>
+                        <span style="color: var(--accent); font-weight: bold; margin-right: 10px;">[{{ page.category }}]</span>
+                        <span style="font-size: 1.1rem;">{{ page.title }}</span>
+                        <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">Slug: /wiki/{{ page.slug }}</div>
+                    </div>
+                    <div style="min-width: 150px; text-align: right;">
+                        <a href="/admin/wiki/edit/{{ page.slug }}" style="color: #ffcc00; text-decoration: none; margin-right: 15px; font-weight: bold;">EDIT</a>
+                        <a href="/admin/wiki/delete/{{ page.slug }}" style="color: #ff4444; text-decoration: none; font-weight: bold;" onclick="return confirm('Delete this wiki page?')">DELETE</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align:center; color:#aaa;">No wiki pages found.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <script>
         $('#summernote').summernote({

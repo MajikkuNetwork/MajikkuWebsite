@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 style="margin-bottom: 10px;">Legal Information</h1>
+<p class="subtitle">{{ doc.title }}</p>
+
+<div style="display: flex; gap: 30px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 200px;">
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+            <a href="/legal/tos" class="role-btn {% if doc.title == 'Terms of Service' %}active{% endif %}" style="display: block; margin-bottom: 10px;">Terms of Service</a>
+            <a href="/legal/privacy" class="role-btn {% if doc.title == 'Privacy Policy' %}active{% endif %}" style="display: block; margin-bottom: 10px;">Privacy Policy</a>
+            <a href="/legal/refund" class="role-btn {% if doc.title == 'Refund Policy' %}active{% endif %}" style="display: block;">Refund Policy</a>
+        </div>
+    </div>
+
+    <div style="flex: 3; min-width: 300px;">
+        <div class="admin-box">
+            <div style="line-height: 1.6; color: #ddd;">
+                {{ doc.content | safe }}
+            </div>
+            
+            <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; color: #888;">
+                Last Updated: January 2026<br>
+                Contact: majikkunetwork@gmail.com
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
