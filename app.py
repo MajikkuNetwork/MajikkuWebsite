@@ -445,29 +445,41 @@ def admin_wiki_new():
 
 @app.route('/admin/wiki/edit/<slug>', methods=['GET', 'POST'])
 def admin_wiki_edit(slug):
+    # 1. Auth Check
     if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
         return "Unauthorized", 403
 
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
+    try:
+        conn = sqlite3.connect('database.db')
+        conn.row_factory = sqlite3.Row
 
-    if request.method == 'POST':
-        title = request.form['title']
-        category = request.form['category']
-        content = request.form['content']
-        # Note: We usually don't change the slug to avoid breaking links, 
-        # but if you want to allow it, you'd need to delete old and insert new.
-        # For now, let's keep slug static.
-        conn.execute("UPDATE wiki SET title=?, category=?, content=? WHERE slug=?", (title, category, content, slug))
-        conn.commit()
-        conn.close()
-        return redirect(url_for('admin'))
+        if request.method == 'POST':
+            title = request.form['title']
+            category = request.form['category']
+            content = request.form['content']
+            
+            conn.execute("UPDATE wiki SET title=?, category=?, content=? WHERE slug=?", (title, category, content, slug))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('admin'))
 
-    page = conn.execute("SELECT * FROM wiki WHERE slug = ?", (slug,)).fetchone()
-    conn.close()
-    
-    if not page: return "Page not found", 404
-    return render_template('edit_wiki.html', page=page, user=session.get('user'))
+        # 2. GET Logic (The part likely crashing)
+        row = conn.execute("SELECT * FROM wiki WHERE slug = ?", (slug,)).fetchone()
+        
+        if not row:
+            conn.close()
+            return "Page not found", 404
+        
+        # FIX: Convert the database row to a standard dictionary immediately
+        page_data = dict(row)
+        
+        conn.close() # Now it is safe to close
+        
+        return render_template('edit_wiki.html', page=page_data, user=session.get('user'))
+        
+    except Exception as e:
+        print(f"ERROR in Wiki Edit: {e}") # This prints the real error to your terminal
+        return f"Internal Error: {e}", 500
 
 @app.route('/admin/wiki/delete/<slug>')
 def admin_wiki_delete(slug):
