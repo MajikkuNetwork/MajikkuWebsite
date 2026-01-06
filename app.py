@@ -139,7 +139,8 @@ def get_db_connection():
         host=os.getenv("MYSQL_HOST"),
         user=os.getenv("MYSQL_USER"),
         password=os.getenv("MYSQL_PASSWORD"),
-        database=os.getenv("MYSQL_DB")
+        database=os.getenv("MYSQL_DB"),
+        collation='utf8mb4_general_ci'  # <--- ADD THIS LINE
     )
 
 # --- DATABASE SETUP (MYSQL) ---
