@@ -1,4 +1,12 @@
 {% extends "base.html" %}
+
+{% block meta_tags %}
+    <meta property="og:title" content="{{ page.title }} | Majikku Wiki">
+    
+    <meta property="og:description" content="Read everything about {{ page.title }} in the {{ page.category }} category on the Majikku Wiki.">
+    
+    <meta name="theme-color" content="#0099FF">
+{% endblock %}
 {% block content %}
 
 <div style="margin-bottom: 20px;">
