@@ -23,15 +23,11 @@
                 <div class="desc-text" style="margin-bottom: 15px;">Use hyphens instead of spaces. This will be the link: /wiki/your-slug</div>
             {% endif %}
 
-            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Category</label>
-            <input type="text" name="category" class="majikku-input" value="{{ page.category if page else '' }}" list="wiki-cats" placeholder="Type or select category..." required>
-            <datalist id="wiki-cats">
-                <option value="General">
-                <option value="Lore">
-                <option value="Gameplay">
-                <option value="Items">
-                <option value="Server Info">
-            </datalist>
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Category Path</label>
+            <input type="text" name="category" class="majikku-input" value="{{ page.category if page else '' }}" placeholder="Lore > Races > Hostiles" required>
+            <div class="desc-text" style="margin-bottom: 15px; color: #888; font-size: 0.8rem;">
+                Use <b>&gt;</b> to create subcategories. (e.g. <code>Lore > History > Ancient Era</code>)
+            </div>
 
             <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Content</label>
             <textarea id="summernote" name="content">{{ page.content if page else '' }}</textarea>

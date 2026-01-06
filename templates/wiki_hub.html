@@ -1,25 +1,109 @@
 {% extends "base.html" %}
+
 {% block content %}
 
 <h1 style="margin-bottom: 10px;">Majikku Wiki</h1>
 <p class="subtitle">Knowledge Base & Guides</p>
 
-<div class="wiki-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
-    {% for category, pages in categories.items() %}
-    <div class="wiki-card" style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-        <h3 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">{{ category }}</h3>
-        <ul style="list-style: none; padding: 0;">
-            {% for page in pages %}
-            <li style="margin-bottom: 10px;">
-                <a href="/wiki/{{ page.slug }}" style="color: white; text-decoration: none; font-size: 1.1rem; display: flex; align-items: center;">
-                    <span style="color: var(--primary); margin-right: 10px;">➤</span>
-                    {{ page.title }}
+{% macro render_category(categories_dict) %}
+    {% for cat_name, cat_data in categories_dict.items() %}
+    <div class="wiki-category-box">
+        <h3 class="wiki-cat-title">{{ cat_name }}</h3>
+
+        {% if cat_data.pages %}
+        <ul class="wiki-page-list">
+            {% for page in cat_data.pages %}
+            <li>
+                <a href="/wiki/{{ page.slug }}" class="wiki-link">
+                    <span class="icon">➤</span> {{ page.title }}
                 </a>
             </li>
             {% endfor %}
         </ul>
+        {% endif %}
+
+        {% if cat_data.subcategories %}
+        <div class="wiki-subcategory-container">
+            {{ render_category(cat_data.subcategories) }}
+        </div>
+        {% endif %}
     </div>
     {% endfor %}
+{% endmacro %}
+
+<div class="wiki-container">
+    {% if wiki_tree %}
+        {{ render_category(wiki_tree) }}
+    {% else %}
+        <p style="text-align: center; color: #888;">The archives are empty.</p>
+    {% endif %}
 </div>
+
+<style>
+    /* Main Layout */
+    .wiki-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* The Box for a Category */
+    .wiki-category-box {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .wiki-cat-title {
+        color: var(--primary);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 5px;
+        margin-top: 0;
+        font-size: 1.2rem;
+    }
+
+    /* List of Pages */
+    .wiki-page-list {
+        list-style: none;
+        padding-left: 10px;
+        margin-bottom: 15px;
+    }
+
+    .wiki-link {
+        color: #ddd;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        padding: 2px 0;
+        transition: 0.2s;
+    }
+
+    .wiki-link:hover {
+        color: var(--secondary);
+        padding-left: 5px;
+    }
+
+    .icon {
+        color: var(--primary);
+        font-size: 0.8rem;
+        margin-right: 8px;
+    }
+
+    /* Indent Subcategories */
+    .wiki-subcategory-container {
+        margin-left: 20px; /* This creates the visual hierarchy */
+        padding-left: 15px;
+        border-left: 2px solid rgba(255,255,255,0.05); /* Optional: Line guide */
+    }
+
+    /* Make sub-headers slightly smaller */
+    .wiki-subcategory-container h3 {
+        font-size: 1rem;
+        color: var(--accent);
+        border-bottom: none;
+    }
+</style>
 
 {% endblock %}

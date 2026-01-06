@@ -2,7 +2,6 @@ from flask import Flask, redirect, request, render_template, session, url_for, j
 import requests
 import os
 import time
-import sqlite3
 import mysql.connector 
 from dotenv import load_dotenv
 
@@ -33,7 +32,7 @@ ADMIN_ROLE_IDS = [
 # ID allowed to post Events only
 LEAD_COORDINATOR_ID = "1207778273791184927"
 
-# ID allowed to post Lore only (NEW)
+# ID allowed to post Lore only
 LEAD_STORYTELLER_ID = "1452004814375616765"
 
 # --- OLD HARDCODED WIKI DATA (For seeding DB only) ---
@@ -134,68 +133,86 @@ LEGAL_DATA = {
     }
 }
 
-# --- DATABASE SETUP (WEBSITE: SQLite) ---
-def init_sqlite_db():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    # Announcements Table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS announcements (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            category TEXT DEFAULT 'NEWS',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            author TEXT NOT NULL
-        )
-    ''')
-    
-    # Wiki Table (NEW)
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS wiki (
-            slug TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            category TEXT NOT NULL,
-            content TEXT NOT NULL
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+# --- DATABASE CONNECTION HELPER ---
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("MYSQL_HOST"),
+        user=os.getenv("MYSQL_USER"),
+        password=os.getenv("MYSQL_PASSWORD"),
+        database=os.getenv("MYSQL_DB")
+    )
+
+# --- DATABASE SETUP (MYSQL) ---
+def init_mysql_db():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Announcements Table
+        # Note: Using LONGTEXT for content to handle large HTML blocks
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS announcements (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content LONGTEXT NOT NULL,
+                category VARCHAR(50) DEFAULT 'NEWS',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                author VARCHAR(255) NOT NULL
+            )
+        ''')
+        
+        # Wiki Table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS wiki (
+                slug VARCHAR(255) PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                category VARCHAR(255) NOT NULL,
+                content LONGTEXT NOT NULL
+            )
+        ''')
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Database tables checked/initialized.")
+    except mysql.connector.Error as err:
+        print(f"Error initializing database: {err}")
 
 # --- SEED WIKI DATA ---
-# Checks if wiki is empty, if so, loads the hardcoded stuff into the DB
 def seed_wiki_db():
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT count(*) FROM wiki")
-    count = cursor.fetchone()[0]
-    
-    if count == 0:
-        print("Seeding Wiki Database...")
-        for slug, data in INITIAL_WIKI_DATA.items():
-            cursor.execute("INSERT INTO wiki (slug, title, category, content) VALUES (?, ?, ?, ?)",
-                           (slug, data['title'], data['category'], data['content']))
-        conn.commit()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT count(*) FROM wiki")
+        count = cursor.fetchone()[0]
+        
+        if count == 0:
+            print("Seeding Wiki Database...")
+            for slug, data in INITIAL_WIKI_DATA.items():
+                # MySQL uses %s as placeholder, not ?
+                cursor.execute(
+                    "INSERT INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)",
+                    (slug, data['title'], data['category'], data['content'])
+                )
+            conn.commit()
+        cursor.close()
+        conn.close()
+    except mysql.connector.Error as err:
+        print(f"Error seeding database: {err}")
 
-init_sqlite_db()
-seed_wiki_db() # Run seed check
+# Initialize DB on startup
+init_mysql_db()
+seed_wiki_db()
 
-# --- HELPER: GET HYTALE INFO (GAME DB: MySQL) ---
+# --- HELPER: GET HYTALE INFO ---
 def get_hytale_profile(discord_id):
     try:
-        conn = mysql.connector.connect(
-            host=os.getenv("MYSQL_HOST"),
-            user=os.getenv("MYSQL_USER"),
-            password=os.getenv("MYSQL_PASSWORD"),
-            database=os.getenv("MYSQL_DB")
-        )
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True) 
         query = "SELECT username, hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1"
         cursor.execute(query, (discord_id,))
         result = cursor.fetchone()
+        cursor.close()
         conn.close()
         return result
     except Exception as e:
@@ -282,25 +299,31 @@ def check_is_storyteller(user_id):
 
 @app.route('/')
 def home():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    posts = conn.execute("SELECT * FROM announcements WHERE category='NEWS' ORDER BY id DESC").fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True) # dictionary=True is KEY for templates
+    cursor.execute("SELECT * FROM announcements WHERE category='NEWS' ORDER BY id DESC")
+    posts = cursor.fetchall()
+    cursor.close()
     conn.close()
     return render_template('home.html', user=session.get('user'), announcements=posts)
 
 @app.route('/events')
 def events():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    posts = conn.execute("SELECT * FROM announcements WHERE category='EVENT' ORDER BY id DESC").fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM announcements WHERE category='EVENT' ORDER BY id DESC")
+    posts = cursor.fetchall()
+    cursor.close()
     conn.close()
     return render_template('events.html', user=session.get('user'), announcements=posts)
 
 @app.route('/lore')
 def lore():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    posts = conn.execute("SELECT * FROM announcements WHERE category='LORE' ORDER BY id DESC").fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM announcements WHERE category='LORE' ORDER BY id DESC")
+    posts = cursor.fetchall()
+    cursor.close()
     conn.close()
     return render_template('lore.html', user=session.get('user'), announcements=posts)
 
@@ -358,23 +381,33 @@ def admin():
     if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story')):
         return render_template('base.html', content="<h1>Access Denied</h1>")
 
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
     
     # 1. Fetch Announcements
     if session.get('is_admin'):
-        posts = conn.execute('SELECT * FROM announcements ORDER BY id DESC').fetchall()
+        cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
+        posts = cursor.fetchall()
     else:
         allowed = []
-        if session.get('is_coord'): allowed.append("'EVENT'")
-        if session.get('is_story'): allowed.append("'LORE'")
-        posts = conn.execute(f"SELECT * FROM announcements WHERE category IN ({','.join(allowed)}) ORDER BY id DESC").fetchall() if allowed else []
+        if session.get('is_coord'): allowed.append("EVENT")
+        if session.get('is_story'): allowed.append("LORE")
+        
+        if allowed:
+            # Create parameterized query for safety
+            format_strings = ','.join(['%s'] * len(allowed))
+            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({format_strings}) ORDER BY id DESC", tuple(allowed))
+            posts = cursor.fetchall()
+        else:
+            posts = []
     
-    # 2. Fetch Wiki Pages (For the Wiki list) - ONLY if Admin or Storyteller
+    # 2. Fetch Wiki Pages
     wiki_pages = []
     if session.get('is_admin') or session.get('is_story'):
-        wiki_pages = conn.execute('SELECT * FROM wiki ORDER BY category, title').fetchall()
+        cursor.execute('SELECT * FROM wiki ORDER BY category, title')
+        wiki_pages = cursor.fetchall()
 
+    cursor.close()
     conn.close()
     return render_template('admin.html', user=session.get('user'), announcements=posts, wiki_pages=wiki_pages)
 
@@ -386,35 +419,48 @@ def admin_post():
     category = request.form.get('category')
     author = session['user']['username']
     
-    # Permission check...
-    conn = sqlite3.connect('database.db')
-    conn.execute('INSERT INTO announcements (title, content, category, author) VALUES (?, ?, ?, ?)', (title, content, category, author))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO announcements (title, content, category, author) VALUES (%s, %s, %s, %s)', 
+        (title, content, category, author)
+    )
     conn.commit()
+    cursor.close()
     conn.close()
     return redirect(url_for('admin'))
 
 @app.route('/admin/edit/<int:id>', methods=['GET', 'POST'])
 def admin_edit(id):
-    # Same as before...
     if 'user' not in session: return redirect(url_for('login'))
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
     if request.method == 'POST':
-        conn.execute("UPDATE announcements SET title = ?, content = ? WHERE id = ?", (request.form['title'], request.form['content'], id))
+        cursor.execute(
+            "UPDATE announcements SET title = %s, content = %s WHERE id = %s", 
+            (request.form['title'], request.form['content'], id)
+        )
         conn.commit()
+        cursor.close()
         conn.close()
         return redirect(url_for('admin'))
-    post = conn.execute("SELECT * FROM announcements WHERE id = ?", (id,)).fetchone()
+    
+    cursor.execute("SELECT * FROM announcements WHERE id = %s", (id,))
+    post = cursor.fetchone()
+    cursor.close()
     conn.close()
     return render_template('edit_post.html', post=post, user=session.get('user'))
 
 @app.route('/admin/delete/<int:id>')
 def admin_delete(id):
-    # Same as before...
     if 'user' not in session: return "Unauthorized", 403
-    conn = sqlite3.connect('database.db')
-    conn.execute('DELETE FROM announcements WHERE id = ?', (id,))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM announcements WHERE id = %s', (id,))
     conn.commit()
+    cursor.close()
     conn.close()
     return redirect(url_for('admin'))
 
@@ -425,60 +471,65 @@ def admin_wiki_new():
         return "Unauthorized", 403
 
     if request.method == 'POST':
-        slug = request.form['slug'].lower().replace(" ", "-") # Simple slugify
+        slug = request.form['slug'].lower().replace(" ", "-")
         title = request.form['title']
         category = request.form['category']
         content = request.form['content']
         
-        conn = sqlite3.connect('database.db')
-        # Use REPLACE INTO to allow overwriting if slug exists, or handle error
+        conn = get_db_connection()
+        cursor = conn.cursor()
         try:
-            conn.execute("INSERT OR REPLACE INTO wiki (slug, title, category, content) VALUES (?, ?, ?, ?)", (slug, title, category, content))
+            # MySQL syntax for replace
+            cursor.execute(
+                "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
+                (slug, title, category, content)
+            )
             conn.commit()
         except Exception as e:
             print(f"DB Error: {e}")
+        
+        cursor.close()
         conn.close()
         return redirect(url_for('admin'))
 
-    # If GET, show blank editor
     return render_template('edit_wiki.html', page=None, user=session.get('user'))
 
 @app.route('/admin/wiki/edit/<slug>', methods=['GET', 'POST'])
 def admin_wiki_edit(slug):
-    # 1. Auth Check
     if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
         return "Unauthorized", 403
 
     try:
-        conn = sqlite3.connect('database.db')
-        conn.row_factory = sqlite3.Row
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         if request.method == 'POST':
             title = request.form['title']
             category = request.form['category']
             content = request.form['content']
             
-            conn.execute("UPDATE wiki SET title=?, category=?, content=? WHERE slug=?", (title, category, content, slug))
+            cursor.execute(
+                "UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", 
+                (title, category, content, slug)
+            )
             conn.commit()
+            cursor.close()
             conn.close()
             return redirect(url_for('admin'))
 
-        # 2. GET Logic (The part likely crashing)
-        row = conn.execute("SELECT * FROM wiki WHERE slug = ?", (slug,)).fetchone()
+        cursor.execute("SELECT * FROM wiki WHERE slug = %s", (slug,))
+        page_data = cursor.fetchone()
         
-        if not row:
-            conn.close()
+        cursor.close()
+        conn.close()
+        
+        if not page_data:
             return "Page not found", 404
-        
-        # FIX: Convert the database row to a standard dictionary immediately
-        page_data = dict(row)
-        
-        conn.close() # Now it is safe to close
         
         return render_template('edit_wiki.html', page=page_data, user=session.get('user'))
         
     except Exception as e:
-        print(f"ERROR in Wiki Edit: {e}") # This prints the real error to your terminal
+        print(f"ERROR in Wiki Edit: {e}") 
         return f"Internal Error: {e}", 500
 
 @app.route('/admin/wiki/delete/<slug>')
@@ -486,35 +537,64 @@ def admin_wiki_delete(slug):
     if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
         return "Unauthorized", 403
     
-    conn = sqlite3.connect('database.db')
-    conn.execute("DELETE FROM wiki WHERE slug=?", (slug,))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM wiki WHERE slug=%s", (slug,))
     conn.commit()
+    cursor.close()
     conn.close()
     return redirect(url_for('admin'))
 
-# --- PUBLIC ROUTES (WIKI & LEGAL) ---
+# --- HELPER: BUILD WIKI TREE ---
+def build_wiki_tree(pages):
+    tree = {}
+    
+    for page in pages:
+        # Split "Lore > Races > Elves" into ['Lore', 'Races', 'Elves']
+        # We strip whitespace to handle "Lore > Races" vs "Lore>Races"
+        parts = [p.strip() for p in page['category'].split('>')]
+        
+        current_level = tree
+        
+        for i, part in enumerate(parts):
+            # Create the category if it doesn't exist at this level
+            if part not in current_level:
+                current_level[part] = {
+                    "subcategories": {}, 
+                    "pages": []
+                }
+            
+            # If this is the LAST part of the path, add the page here
+            if i == len(parts) - 1:
+                current_level[part]["pages"].append(page)
+            
+            # Move deeper into the tree for the next iteration
+            current_level = current_level[part]["subcategories"]
+            
+    return tree
+
 @app.route('/wiki')
 def wiki_hub():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    # Fetch from DB now!
-    rows = conn.execute("SELECT * FROM wiki ORDER BY category, title").fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    # Get all pages
+    cursor.execute("SELECT * FROM wiki ORDER BY category, title")
+    rows = cursor.fetchall()
+    cursor.close()
     conn.close()
 
-    # Reconstruct category dict
-    categories = {}
-    for row in rows:
-        cat = row['category']
-        if cat not in categories: categories[cat] = []
-        categories[cat].append({"slug": row['slug'], "title": row['title']})
+    # Build the nested tree structure
+    wiki_tree = build_wiki_tree(rows)
     
-    return render_template('wiki_hub.html', categories=categories, user=session.get('user'))
+    return render_template('wiki_hub.html', wiki_tree=wiki_tree, user=session.get('user'))
 
 @app.route('/wiki/<slug>')
 def wiki_page(slug):
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    page = conn.execute("SELECT * FROM wiki WHERE slug=?", (slug,)).fetchone()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM wiki WHERE slug=%s", (slug,))
+    page = cursor.fetchone()
+    cursor.close()
     conn.close()
     
     if not page: return "Page not found", 404
@@ -527,8 +607,6 @@ def legal_page(doc_type):
     return render_template('legal_doc.html', doc=doc, user=session.get('user'))
 
 # --- APPLICATION ROUTES (Webhook Enabled) ---
-# ... (Keep your apply/submit routes exactly as they were in your previous code) ...
-# I am truncating them here for brevity, but make sure you keep the /apply and /submit functions!
 @app.route('/apply')
 def apply():
     if 'user' not in session: return redirect(url_for('login'))
@@ -538,10 +616,10 @@ def apply():
 @app.route('/submit', methods=['POST'])
 def submit_application():
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    data = request.json
-    user = session['user']
-    # ... (Paste your webhook logic here) ...
-    # (Since I provided the webhook logic in the previous answer, I assume you have it)
+    
+    # ... Webhook logic here (use previously provided webhook code) ...
+    # This part does not interact with DB, so no changes needed
+    
     return jsonify({'success': True})
 
 @app.route('/appeal')
@@ -552,7 +630,7 @@ def appeal():
 
 @app.route('/submit-appeal', methods=['POST'])
 def submit_appeal():
-    # ... (Paste appeal webhook logic here) ...
+    # ... Webhook logic here (use previously provided webhook code) ...
     return jsonify({'success': True})
 
 if __name__ == '__main__':
