@@ -673,8 +673,8 @@ def report():
             print(f"DATABASE ERROR: {e}")
             return "Database Error", 500
 
-        # 3. Send Webhook (Now passing is_anon correctly)
-        send_report_webhook(
+        # 3. Send via Bot API (With Buttons)
+        send_report_bot_message(
             report_id=report_id,
             report_type=report_type,
             source="WEBSITE",
@@ -683,7 +683,7 @@ def report():
             server=server_origin,
             reason=reason,
             evidence=evidence,
-            is_anonymous=is_anon  # <--- PASSING THE FLAG HERE
+            is_anonymous=is_anon
         )
 
         return render_template('report_success.html', user=session['user'])
@@ -691,71 +691,87 @@ def report():
     return render_template('report.html', user=session['user'])
 
 # --- HELPER: WEBHOOK SENDER (FIXED) ---
-def send_report_webhook(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
-    import json
+# --- HELPER: BOT SENDER WITH BUTTONS ---
+def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
     
-    # 1. Select URL & Color
+    # 1. Select Channel ID & Color
     if report_type == 'STAFF':
-        url = os.getenv("LEADERSHIP_WEBHOOK_URL")
+        channel_id = os.getenv("LEADERSHIP_CHANNEL_ID")
         color = 10181046 # Purple/Dark Red
         title_prefix = "🚨 STAFF REPORT"
     else:
-        url = os.getenv("REPORTS_WEBHOOK_URL")
+        channel_id = os.getenv("REPORTS_CHANNEL_ID")
         color = 16711680 # Bright Red
         title_prefix = "⚠️ PLAYER REPORT"
 
-    if not url:
-        print("ERROR: Webhook URL is missing in .env file!")
+    if not channel_id:
+        print("ERROR: Channel ID missing in .env")
         return
 
-    # 2. Handle Anonymity
-    # We still show the name to leadership/staff (or you can hide it entirely if you prefer)
-    # But we add the specific warning field you requested.
-    
+    # 2. Build the Embed (Same as before)
     fields = [
         {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
         {"name": "Server/Origin", "value": str(server), "inline": True},
     ]
 
-    # Logic for Anonymous display
     if is_anonymous:
-        # If anonymous, we hide the name in the main field or mark it clearly
         fields.append({"name": "Reported By", "value": "||Anonymous User||", "inline": True})
     else:
         fields.append({"name": "Reported By", "value": str(reporter_name), "inline": True})
 
-    # Add Reason and Evidence (Ensure they aren't empty strings)
     fields.append({"name": "Reason / Incident", "value": reason if reason else "No details provided.", "inline": False})
     fields.append({"name": "Evidence", "value": evidence if evidence else "No evidence provided.", "inline": False})
 
-    # 3. The Special Anonymous Section
     description_text = ""
     if is_anonymous:
-        description_text = "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\nPlease handle this ticket with discretion."
+        description_text = "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\n"
 
     embed = {
         "title": f"{title_prefix} #{report_id}",
-        "description": description_text, # This puts the big warning right at the top
+        "description": description_text,
         "color": color,
         "fields": fields,
-        "footer": {"text": f"Source: {source} | ID: {report_id} | {time.strftime('%Y-%m-%d %H:%M:%S')}"}
+        "footer": {"text": f"Source: {source} | ID: {report_id} | Status: OPEN"}
     }
 
+    # 3. DEFINE THE BUTTONS (Components)
+    # We send a "Action Row" containing one button: "Claim / Investigate"
+    components = [
+        {
+            "type": 1, # Action Row
+            "components": [
+                {
+                    "type": 2, # Button
+                    "style": 1, # Primary (Blurple Color)
+                    "label": "Claim / Investigate",
+                    "emoji": {"name": "magnifying_glass_tilted_right", "id": None}, # 🔎 Emoji
+                    "custom_id": f"claim_report_{report_id}" # CRITICAL: This sends the ID to your bot
+                }
+            ]
+        }
+    ]
+
+    # 4. Send Request via BOT API (Not Webhook)
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {os.getenv('BOT_TOKEN')}",
+        "Content-Type": "application/json"
+    }
+    
     data = {
-        "username": "Majikku Watchtower",
-        "embeds": [embed]
+        "embeds": [embed],
+        "components": components # Attach the button here
     }
 
-    # 4. Send Request with Debugging
     try:
-        response = requests.post(url, json=data)
-        if response.status_code in [200, 204]:
-            print("Webhook sent successfully.")
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            print("Bot message sent with buttons.")
         else:
-            print(f"WEBHOOK FAILED: {response.status_code}")
-            print(response.text) # Prints the error message from Discord
+            print(f"BOT MESSAGE FAILED: {response.status_code}")
+            print(response.text)
     except Exception as e:
-        print(f"WEBHOOK EXCEPTION: {e}")
+        print(f"BOT API EXCEPTION: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
