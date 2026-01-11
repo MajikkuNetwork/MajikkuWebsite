@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin-top: 50px;">
+    
+    <div class="text-center mb-5">
+        <h1>Submit a Report</h1>
+        <p class="text-muted">Help us keep Majikku safe. Please provide as much detail as possible.</p>
+    </div>
+
+    <div class="d-flex justify-content-center mb-4">
+        <button class="btn btn-outline-danger me-2 active" id="btn-player" onclick="switchForm('PLAYER')">Report a Player</button>
+        <button class="btn btn-outline-warning" id="btn-staff" onclick="switchForm('STAFF')">Report Staff</button>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            <form action="/report" method="POST" id="reportForm">
+                
+                <input type="hidden" name="report_type" id="report_type" value="PLAYER">
+
+                <div id="staff-alert" class="alert alert-warning" style="display: none;">
+                    <strong>Notice:</strong> This report will be sent <u>only</u> to the Leadership Team. Regular staff will not see this.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Name of Offender</label>
+                    <input type="text" class="form-control bg-secondary text-white border-0" name="target_name" required placeholder="In-game name or Discord Tag">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Server / Origin</label>
+                    <select class="form-control bg-secondary text-white border-0" name="server_origin">
+                        <option value="Discord">Discord Server</option>
+                        <option value="Hub">Game: Hub</option>
+                        <option value="Survival">Game: Survival</option>
+                        <option value="Creative">Game: Creative</option>
+                        <option value="Website">Website</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">What happened?</label>
+                    <textarea class="form-control bg-secondary text-white border-0" name="reason" rows="5" required placeholder="Please describe the incident in detail..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Evidence (Links)</label>
+                    <input type="text" class="form-control bg-secondary text-white border-0" name="evidence" placeholder="Imgur links, YouTube links, or Pastebin logs">
+                    <small class="text-muted">For screenshots, please upload to Imgur and paste the link here.</small>
+                </div>
+
+                <div class="mb-3 form-check" id="anon-group" style="display: none;">
+                    <input type="checkbox" class="form-check-input" name="anonymous" id="anonymous">
+                    <label class="form-check-label" for="anonymous">Remain Anonymous? (Leadership will not see your name)</label>
+                </div>
+
+                <button type="submit" class="btn btn-danger w-100 mt-3">Submit Report</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchForm(type) {
+        document.getElementById('report_type').value = type;
+        
+        // Update Buttons
+        if (type === 'PLAYER') {
+            document.getElementById('btn-player').classList.add('active', 'btn-danger');
+            document.getElementById('btn-player').classList.remove('btn-outline-danger');
+            document.getElementById('btn-staff').classList.remove('active', 'btn-warning');
+            document.getElementById('btn-staff').classList.add('btn-outline-warning');
+            
+            // Hide/Show Special Fields
+            document.getElementById('staff-alert').style.display = 'none';
+            document.getElementById('anon-group').style.display = 'none';
+        } else {
+            document.getElementById('btn-staff').classList.add('active', 'btn-warning');
+            document.getElementById('btn-staff').classList.remove('btn-outline-warning');
+            document.getElementById('btn-player').classList.remove('active', 'btn-danger');
+            document.getElementById('btn-player').classList.add('btn-outline-danger');
+
+            // Hide/Show Special Fields
+            document.getElementById('staff-alert').style.display = 'block';
+            document.getElementById('anon-group').style.display = 'block';
+        }
+    }
+    // Initialize
+    switchForm('PLAYER');
+</script>
+{% endblock %}

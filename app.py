@@ -634,5 +634,117 @@ def submit_appeal():
     # ... Webhook logic here (use previously provided webhook code) ...
     return jsonify({'success': True})
 
+# --- REPORT ROUTES ---
+
+@app.route('/report', methods=['GET', 'POST'])
+def report():
+    if 'user' not in session: return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        report_type = request.form.get('report_type') # 'PLAYER' or 'STAFF'
+        target_name = request.form.get('target_name')
+        server_origin = request.form.get('server_origin')
+        reason = request.form.get('reason')
+        evidence = request.form.get('evidence')
+        is_anon = request.form.get('anonymous') == 'on'
+        
+        reporter_name = "Anonymous" if is_anon else session['user']['username']
+        reporter_id = session['user']['id']
+
+        # 1. Save to Database
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                '''INSERT INTO reports 
+                   (type, source, reporter_id, reported_name, server_origin, reason, evidence, is_anonymous) 
+                   VALUES (%s, 'WEBSITE', %s, %s, %s, %s, %s, %s)''',
+                (report_type, reporter_id, target_name, server_origin, reason, evidence, 1 if is_anon else 0)
+            )
+            conn.commit()
+            report_id = cursor.lastrowid
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            print(f"DB Error: {e}")
+            return "Database Error", 500
+
+        # 2. Send Webhook
+        send_report_webhook(
+            report_id=report_id,
+            report_type=report_type,
+            source="WEBSITE",
+            reporter_name=reporter_name,
+            target_name=target_name,
+            server=server_origin,
+            reason=reason,
+            evidence=evidence
+        )
+
+        return render_template('report_success.html', user=session['user'])
+
+    return render_template('report.html', user=session['user'])
+
+# --- HELPER: WEBHOOK SENDER ---
+def send_report_webhook(report_id, report_type, source, reporter_name, target_name, server, reason, evidence):
+    import json
+    
+    # Select Webhook URL and Color based on type
+    if report_type == 'STAFF':
+        url = os.getenv("LEADERSHIP_WEBHOOK_URL")
+        color = 10181046 # Purple/Dark Red for Leadership
+        title = f"🚨 STAFF REPORT #{report_id}"
+    else:
+        url = os.getenv("REPORTS_WEBHOOK_URL")
+        color = 16711680 # Bright Red for Player Report
+        title = f"⚠️ PLAYER REPORT #{report_id}"
+
+    embed = {
+        "title": title,
+        "color": color,
+        "footer": {
+            "text": f"Reported via {source} | ID: {report_id}"
+        },
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        "fields": [
+            {
+                "name": "Reported User",
+                "value": f"**{target_name}**",
+                "inline": True
+            },
+            {
+                "name": "Server/Realm",
+                "value": server if server else "N/A",
+                "inline": True
+            },
+            {
+                "name": "Reported By",
+                "value": reporter_name,
+                "inline": True
+            },
+            {
+                "name": "Reason / Incident",
+                "value": reason,
+                "inline": False
+            },
+            {
+                "name": "Evidence",
+                "value": evidence if evidence else "No evidence provided.",
+                "inline": False
+            }
+        ]
+    }
+
+    data = {
+        "embeds": [embed],
+        "username": "Majikku Watchtower",
+        "avatar_url": "https://i.imgur.com/YOUR_LOGO.png" # Optional: Add your bot logo URL
+    }
+
+    try:
+        requests.post(url, json=data)
+    except Exception as e:
+        print(f"Webhook Error: {e}")
+
 if __name__ == '__main__':
     app.run(debug=True)
