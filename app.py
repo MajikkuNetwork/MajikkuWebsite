@@ -636,22 +636,26 @@ def submit_appeal():
 
 # --- REPORT ROUTES ---
 
+# --- REPORT ROUTES ---
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'user' not in session: return redirect(url_for('login'))
 
     if request.method == 'POST':
-        report_type = request.form.get('report_type') # 'PLAYER' or 'STAFF'
+        # 1. Get Form Data
+        report_type = request.form.get('report_type')
         target_name = request.form.get('target_name')
         server_origin = request.form.get('server_origin')
         reason = request.form.get('reason')
         evidence = request.form.get('evidence')
+        
+        # Checkbox returns 'on' if checked, None if not
         is_anon = request.form.get('anonymous') == 'on'
         
-        reporter_name = "Anonymous" if is_anon else session['user']['username']
+        reporter_name = session['user']['username']
         reporter_id = session['user']['id']
 
-        # 1. Save to Database
+        # 2. Save to Database (Keep your existing DB code here)
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -666,10 +670,10 @@ def report():
             cursor.close()
             conn.close()
         except Exception as e:
-            print(f"DB Error: {e}")
+            print(f"DATABASE ERROR: {e}")
             return "Database Error", 500
 
-        # 2. Send Webhook
+        # 3. Send Webhook (Now passing is_anon correctly)
         send_report_webhook(
             report_id=report_id,
             report_type=report_type,
@@ -678,73 +682,80 @@ def report():
             target_name=target_name,
             server=server_origin,
             reason=reason,
-            evidence=evidence
+            evidence=evidence,
+            is_anonymous=is_anon  # <--- PASSING THE FLAG HERE
         )
 
         return render_template('report_success.html', user=session['user'])
 
     return render_template('report.html', user=session['user'])
 
-# --- HELPER: WEBHOOK SENDER ---
-def send_report_webhook(report_id, report_type, source, reporter_name, target_name, server, reason, evidence):
+# --- HELPER: WEBHOOK SENDER (FIXED) ---
+def send_report_webhook(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
     import json
     
-    # Select Webhook URL and Color based on type
+    # 1. Select URL & Color
     if report_type == 'STAFF':
         url = os.getenv("LEADERSHIP_WEBHOOK_URL")
-        color = 10181046 # Purple/Dark Red for Leadership
-        title = f"🚨 STAFF REPORT #{report_id}"
+        color = 10181046 # Purple/Dark Red
+        title_prefix = "🚨 STAFF REPORT"
     else:
         url = os.getenv("REPORTS_WEBHOOK_URL")
-        color = 16711680 # Bright Red for Player Report
-        title = f"⚠️ PLAYER REPORT #{report_id}"
+        color = 16711680 # Bright Red
+        title_prefix = "⚠️ PLAYER REPORT"
+
+    if not url:
+        print("ERROR: Webhook URL is missing in .env file!")
+        return
+
+    # 2. Handle Anonymity
+    # We still show the name to leadership/staff (or you can hide it entirely if you prefer)
+    # But we add the specific warning field you requested.
+    
+    fields = [
+        {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
+        {"name": "Server/Origin", "value": str(server), "inline": True},
+    ]
+
+    # Logic for Anonymous display
+    if is_anonymous:
+        # If anonymous, we hide the name in the main field or mark it clearly
+        fields.append({"name": "Reported By", "value": "||Anonymous User||", "inline": True})
+    else:
+        fields.append({"name": "Reported By", "value": str(reporter_name), "inline": True})
+
+    # Add Reason and Evidence (Ensure they aren't empty strings)
+    fields.append({"name": "Reason / Incident", "value": reason if reason else "No details provided.", "inline": False})
+    fields.append({"name": "Evidence", "value": evidence if evidence else "No evidence provided.", "inline": False})
+
+    # 3. The Special Anonymous Section
+    description_text = ""
+    if is_anonymous:
+        description_text = "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\nPlease handle this ticket with discretion."
 
     embed = {
-        "title": title,
+        "title": f"{title_prefix} #{report_id}",
+        "description": description_text, # This puts the big warning right at the top
         "color": color,
-        "footer": {
-            "text": f"Reported via {source} | ID: {report_id}"
-        },
-        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-        "fields": [
-            {
-                "name": "Reported User",
-                "value": f"**{target_name}**",
-                "inline": True
-            },
-            {
-                "name": "Server/Realm",
-                "value": server if server else "N/A",
-                "inline": True
-            },
-            {
-                "name": "Reported By",
-                "value": reporter_name,
-                "inline": True
-            },
-            {
-                "name": "Reason / Incident",
-                "value": reason,
-                "inline": False
-            },
-            {
-                "name": "Evidence",
-                "value": evidence if evidence else "No evidence provided.",
-                "inline": False
-            }
-        ]
+        "fields": fields,
+        "footer": {"text": f"Source: {source} | ID: {report_id} | {time.strftime('%Y-%m-%d %H:%M:%S')}"}
     }
 
     data = {
-        "embeds": [embed],
         "username": "Majikku Watchtower",
-        "avatar_url": "https://i.imgur.com/YOUR_LOGO.png" # Optional: Add your bot logo URL
+        "embeds": [embed]
     }
 
+    # 4. Send Request with Debugging
     try:
-        requests.post(url, json=data)
+        response = requests.post(url, json=data)
+        if response.status_code in [200, 204]:
+            print("Webhook sent successfully.")
+        else:
+            print(f"WEBHOOK FAILED: {response.status_code}")
+            print(response.text) # Prints the error message from Discord
     except Exception as e:
-        print(f"Webhook Error: {e}")
+        print(f"WEBHOOK EXCEPTION: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
