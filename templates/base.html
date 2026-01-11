@@ -4,19 +4,151 @@
     <meta property="og:site_name" content="Majikku Server">
     <meta property="og:title" content="Majikku - Hytale Server">
     <meta property="og:description" content="Join the adventure! Read our lore, check events, and apply for staff.">
-    <meta property="og:image" content="https://majikku.org/static/favicon.ico"> <meta property="og:url" content="{{ request.url }}">
-    <meta name="theme-color" content="#59A7D9"> {% block meta_tags %}{% endblock %}
+    <meta property="og:image" content="https://majikku.org/static/favicon.ico"> 
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="theme-color" content="#59A7D9"> 
+    {% block meta_tags %}{% endblock %}
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Majikku Network</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+    /* --- DROPDOWN FIX --- */
+    select option {
+        background-color: #2b2d31;
+        color: #ffffff;
+    }
+    select option:checked, select option:hover {
+        background-color: #40444b;
+        color: #ffffff;
+    }
+
+    /* --- RESPONSIVE NAVBAR FIX --- */
+    .navbar {
+        display: flex;
+        flex-wrap: wrap; /* Allows the navbar to fold if screen is small */
+        justify-content: space-between; /* Brand on left, links on right */
+        align-items: center;
+        padding: 15px 30px; /* More breathing room */
+        gap: 20px;
+    }
+
+    .nav-brand {
+        font-family: 'Cinzel', serif; 
+        font-size: 1.6rem; 
+        color: white;
+        white-space: nowrap; /* Keeps name on one line */
+    }
+
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap; /* Allows links to stack cleanly */
+        gap: 15px; /* Consistent space between links */
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-links a {
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        transition: color 0.2s;
+        white-space: nowrap; /* Prevents text breaking mid-word */
+    }
+    
+    .nav-links a:hover {
+        color: white;
+    }
+
+    /* Special Button Styling */
+    .nav-btn-admin {
+        color: var(--primary) !important; 
+        border: 1px solid var(--primary); 
+        padding: 6px 14px; 
+        border-radius: 6px;
+    }
+    
+    .nav-btn-logout {
+        border: 1px solid var(--secondary); 
+        padding: 6px 14px; 
+        border-radius: 6px;
+    }
+
+    .nav-highlight {
+        color: #ffcc00 !important;
+    }
+
+    /* Mobile/Tablet Adjustment */
+    @media (max-width: 1200px) {
+        .navbar {
+            flex-direction: column; /* Stack logo above links */
+            text-align: center;
+        }
+        .nav-links {
+            justify-content: center;
+        }
+    }
+    </style>
+    
+    <style>
+        /* Custom Majikku Submit Button */
+        .btn-majikku {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            color: #ffffff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .btn-majikku:hover {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            box-shadow: 0 6px 20px rgba(0, 210, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Toggle Buttons */
+        .btn-neon-toggle {
+            background: transparent;
+            border: 1px solid;
+            padding: 10px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+        .btn-neon-red { border-color: #ff4b4b; color: #ff4b4b; }
+        .btn-neon-red:hover, .btn-neon-red.active {
+            background-color: #ff4b4b; color: #ffffff;
+            box-shadow: 0 0 20px rgba(255, 75, 75, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn-neon-gold { border-color: #ffd700; color: #ffd700; }
+        .btn-neon-gold:hover, .btn-neon-gold.active {
+            background-color: #ffd700; color: #000000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            transform: translateY(-2px);
+        }
+    </style>
+
 </head>
 <body>
 
     <nav class="navbar">
-        <div style="font-family: 'Cinzel'; font-size: 1.5rem; color: white;">Majikku Network</div>
+        <div class="nav-brand">Majikku Network</div>
         <div class="nav-links">
             <a href="/">Home</a>
             <a href="/wiki">Wiki</a>
@@ -24,18 +156,19 @@
             <a href="/socials">Socials</a>
             <a href="/rules">Rules</a>
             <a href="/staff">Staff</a>
+            
             <a href="/apply">Applications</a>
             <a href="/appeal">Appeals</a>
-            <a href="https://store.majikku.org" target="_blank" style="color: #ffcc00;">Store</a>
-            <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" style="color: #ffcc00;">Discord</a>
+            <a href="/report">Report</a> <a href="https://store.majikku.org" target="_blank" class="nav-highlight">Store</a>
+            <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" class="nav-highlight">Discord</a>
             <a href="/legal/tos">Legal</a>
             
             {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') %}
-                <a href="/admin" style="color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px;">Admin</a>
+                <a href="/admin" class="nav-btn-admin">Admin</a>
             {% endif %}
 
             {% if session.get('user') %}
-                <a href="/logout" style="border: 1px solid var(--secondary); padding: 5px 15px; border-radius: 5px;">Logout</a>
+                <a href="/logout" class="nav-btn-logout">Logout</a>
             {% else %}
                 <a href="/login">Login</a>
             {% endif %}

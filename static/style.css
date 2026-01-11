@@ -522,3 +522,75 @@ p.desc-text {
         transform: scale(1);
     }
 }
+
+/* Custom Majikku Submit Button */
+.btn-majikku {
+    background: linear-gradient(135deg, #00b4db, #0083b0); /* Matches your Teal headers */
+    color: #ffffff;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 8px; /* Slightly rounded corners */
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); /* The "Magical" Glow */
+    transition: all 0.3s ease;
+    width: 100%; /* Makes it span the full width of the form */
+    margin-top: 20px;
+}
+
+/* Hover Effect - Makes it lift and glow brighter */
+.btn-majikku:hover {
+    background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+    box-shadow: 0 6px 20px rgba(0, 210, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+/* Active/Click Effect */
+.btn-majikku:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(0, 180, 219, 0.4);
+}
+
+/* Base styling for the toggle buttons */
+.btn-neon-toggle {
+    background: transparent;
+    border: 1px solid;
+    padding: 10px 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase; /* Matches the Build Team button */
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+/* --- Player Button (Red Glow) --- */
+.btn-neon-red {
+    border-color: #ff4b4b;
+    color: #ff4b4b;
+}
+
+.btn-neon-red:hover,
+.btn-neon-red.active {
+    background-color: #ff4b4b;
+    color: #ffffff;
+    box-shadow: 0 0 20px rgba(255, 75, 75, 0.6); /* The Glow Effect */
+    transform: translateY(-2px);
+}
+
+/* --- Staff Button (Gold Glow) --- */
+.btn-neon-gold {
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+.btn-neon-gold:hover,
+.btn-neon-gold.active {
+    background-color: #ffd700;
+    color: #000000; /* Black text reads better on Gold */
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); /* The Glow Effect */
+    transform: translateY(-2px);
+}

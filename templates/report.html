@@ -9,8 +9,17 @@
     </div>
 
     <div class="d-flex justify-content-center mb-4">
-        <button class="btn btn-outline-danger me-2 active" id="btn-player" onclick="switchForm('PLAYER')">Report a Player</button>
-        <button class="btn btn-outline-warning" id="btn-staff" onclick="switchForm('STAFF')">Report Staff</button>
+        <button class="btn btn-neon-toggle btn-neon-red me-3 active" 
+                id="btn-player" 
+                onclick="switchForm('PLAYER')">
+            Report a Player
+        </button>
+        
+        <button class="btn btn-neon-toggle btn-neon-gold" 
+                id="btn-staff" 
+                onclick="switchForm('STAFF')">
+            Report Staff
+        </button>
     </div>
 
     <div class="card bg-dark border-secondary">
@@ -55,7 +64,7 @@
                     <label class="form-check-label" for="anonymous">Remain Anonymous? (Leadership will not see your name)</label>
                 </div>
 
-                <button type="submit" class="btn btn-danger w-100 mt-3">Submit Report</button>
+                <button type="submit" class="btn-majikku">Submit Report</button>
             </form>
         </div>
     </div>
@@ -63,30 +72,29 @@
 
 <script>
     function switchForm(type) {
+        // 1. Update the hidden input
         document.getElementById('report_type').value = type;
         
-        // Update Buttons
+        // 2. Get the buttons
+        const btnPlayer = document.getElementById('btn-player');
+        const btnStaff = document.getElementById('btn-staff');
+        
+        // 3. Toggle the Visuals (Simply add/remove 'active')
         if (type === 'PLAYER') {
-            document.getElementById('btn-player').classList.add('active', 'btn-danger');
-            document.getElementById('btn-player').classList.remove('btn-outline-danger');
-            document.getElementById('btn-staff').classList.remove('active', 'btn-warning');
-            document.getElementById('btn-staff').classList.add('btn-outline-warning');
+            btnPlayer.classList.add('active');
+            btnStaff.classList.remove('active');
             
-            // Hide/Show Special Fields
+            // Hide/Show Fields
             document.getElementById('staff-alert').style.display = 'none';
             document.getElementById('anon-group').style.display = 'none';
         } else {
-            document.getElementById('btn-staff').classList.add('active', 'btn-warning');
-            document.getElementById('btn-staff').classList.remove('btn-outline-warning');
-            document.getElementById('btn-player').classList.remove('active', 'btn-danger');
-            document.getElementById('btn-player').classList.add('btn-outline-danger');
+            btnStaff.classList.add('active');
+            btnPlayer.classList.remove('active');
 
-            // Hide/Show Special Fields
+            // Hide/Show Fields
             document.getElementById('staff-alert').style.display = 'block';
             document.getElementById('anon-group').style.display = 'block';
         }
     }
-    // Initialize
-    switchForm('PLAYER');
 </script>
 {% endblock %}
