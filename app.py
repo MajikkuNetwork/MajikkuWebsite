@@ -757,5 +757,40 @@ def send_report_webhook(report_id, report_type, source, reporter_name, target_na
     except Exception as e:
         print(f"WEBHOOK EXCEPTION: {e}")
 
+# --- DEBUG ROUTE (REMOVE AFTER FIXING) ---
+@app.route('/debug-webhooks')
+def debug_webhooks():
+    # Security: Only allow if logged in (or remove this check if you can't login)
+    if 'user' not in session: 
+        return "Please log in first."
+
+    results = ["<h1>Webhook Diagnostic Tool</h1>"]
+    
+    # 1. Check if Variables Exist
+    report_url = os.getenv("REPORTS_WEBHOOK_URL")
+    staff_url = os.getenv("LEADERSHIP_WEBHOOK_URL")
+    
+    results.append(f"<p><strong>REPORTS_WEBHOOK_URL Found:</strong> {'✅ YES' if report_url else '❌ NO (Check .env file)'}</p>")
+    results.append(f"<p><strong>LEADERSHIP_WEBHOOK_URL Found:</strong> {'✅ YES' if staff_url else '❌ NO (Check .env file)'}</p>")
+
+    # 2. Try Sending a Test Message
+    def try_send(name, url):
+        if not url: return f"Skipping {name} test (URL missing)."
+        try:
+            payload = {"content": f"✅ Connection Test from Majikku Website for {name}."}
+            resp = requests.post(url, json=payload)
+            if resp.status_code in [200, 204]:
+                return f"<p style='color:green'>✅ {name}: Sent Successfully (204)</p>"
+            else:
+                return f"<p style='color:red'>❌ {name}: Failed (Status {resp.status_code})<br>Discord Reply: {resp.text}</p>"
+        except Exception as e:
+            return f"<p style='color:red'>❌ {name}: Python Error: {str(e)}</p>"
+
+    results.append("<h3>Connection Tests:</h3>")
+    results.append(try_send("Player Reports", report_url))
+    results.append(try_send("Staff Reports", staff_url))
+    
+    return "".join(results)
+
 if __name__ == '__main__':
     app.run(debug=True)
