@@ -744,7 +744,7 @@ def send_report_bot_message(report_id, report_type, source, reporter_name, targe
                     "type": 2, # Button
                     "style": 1, # Primary (Blurple Color)
                     "label": "Claim / Investigate",
-                    "emoji": {"name": "magnifying_glass_tilted_right", "id": None}, # 🔎 Emoji
+                    "emoji": {"name": "🔎", "id": None}, # 🔎 Emoji
                     "custom_id": f"claim_report_{report_id}" # CRITICAL: This sends the ID to your bot
                 }
             ]
