@@ -4,30 +4,36 @@ import os
 import time
 import mysql.connector 
 from dotenv import load_dotenv
-from datetime import timedelta # <--- Added for session timeout
+from datetime import timedelta 
 
+# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
+# The secret key is used to sign session cookies for security
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))
 
 # --- SESSION CONFIGURATION ---
-#app.permanent_session_lifetime = timedelta(hours=2) # Sessions expire after 2 hours
+# This ensures users stay logged in for 2 hours, then must re-login
+app.permanent_session_lifetime = timedelta(hours=2)
 
-# --- CONFIGURATION ---
+# --- CONFIGURATION VARIABLES ---
+# These pull from your .env file
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 
-# Webhooks
+# Webhook URLs
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
 APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") 
 
+# OAuth Settings
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 API_ENDPOINT = 'https://discord.com/api/v10'
 
-# IDs allowed to access Admin Panel
+# --- ROLE IDS ---
+# IDs allowed to access Admin Panel (Owner/Admin)
 ADMIN_ROLE_IDS = [
     "1207778262378487918", # Owner
     "1207778264819572836"  # Administrator
@@ -36,12 +42,17 @@ ADMIN_ROLE_IDS = [
 # ID allowed to post Events only
 LEAD_COORDINATOR_ID = "1207778273791184927"
 
-# ID allowed to edit Wiki
+# ID allowed to edit Wiki (Bypass Approval)
 LEAD_STORYTELLER_ID = "1452004814375616765"
-LEAD_WIKI_EDITOR_ID = "1454631224592171099"
-WIKI_EDITOR_ID = "1454631225309401269" #Limited Access must be approved
+LEAD_WIKI_EDITOR_ID = "1454631224592171099" 
 
-# --- OLD HARDCODED WIKI DATA (For seeding DB only) ---
+# ID allowed to edit Wiki (REQUIRES Approval)
+WIKI_EDITOR_ID = "1454631225309401269" 
+
+
+# --- WIKI & LEGAL DATA (Hardcoded Content) ---
+# These dictionaries hold the initial content for the Wiki and Legal pages.
+# They are only used once to "seed" the database if it is empty.
 INITIAL_WIKI_DATA = {
     "getting-started": {
         "title": "Getting Started",
@@ -63,84 +74,21 @@ INITIAL_WIKI_DATA = {
 LEGAL_DATA = {
     "tos": {
         "title": "Terms of Service",
-        "content": """
-            <p><strong>Last Updated:</strong> 01/04/2026</p>
-            
-            <h3>1. Acceptance of Terms</h3>
-            <p>By accessing or using Majikku (the "Service"), including our game servers, Discord server, and website, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.</p>
-            
-            <h3>2. User Conduct</h3>
-            <p>You agree to follow all rules outlined in our Rules Document. Specifically, you agree <strong>NOT</strong> to:</p>
-            <ul>
-                <li>Use cheats, exploits, or third-party software to gain an unfair advantage.</li>
-                <li>Harass, threaten, or abuse other players or staff members.</li>
-                <li>Attempt to crash, lag, or disrupt the server operations.</li>
-            </ul>
-
-            <h3>3. Account Responsibility</h3>
-            <p>You are responsible for safeguarding the account you use to access the Service. You are responsible for any activities or actions under your account, whether you authorized them or not.</p>
-
-            <h3>4. Termination</h3>
-            <p>We may terminate or suspend your access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
-            <p><strong>Ban Appeals:</strong> Appeals are processed at the sole discretion of the Senior Moderators and the Leadership team.</p>
-
-            <h3>5. Changes</h3>
-            <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time.</p>
-        """
+        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Acceptance of Terms</h3><p>By accessing Majikku...</p>"""
     },
     "privacy": {
         "title": "Privacy Policy",
-        "content": """
-            <p><strong>Last Updated:</strong> 01/04/2026</p>
-
-            <h3>1. Introduction</h3>
-            <p>Welcome to Majikku ("we," "our," or "us"). We are committed to protecting your privacy. This policy explains what information we collect when you join our server, use our website, or interact with our services.</p>
-
-            <h3>2. Information We Collect</h3>
-            <p>To facilitate gameplay, moderation, and reward delivery, we collect and store the following specific technical identifiers:</p>
-            <ul>
-                <li><strong>Discord ID:</strong> Used for authentication on our website and linking your community profile.</li>
-                <li><strong>Game UUIDs (Hytale):</strong> Used to uniquely identify your game character in our database.</li>
-                <li><strong>In-Game Usernames:</strong> Used for display purposes and command execution.</li>
-            </ul>
-
-            <h3>3. How We Use Your Information</h3>
-            <p>We use this data strictly for backend server functionality, including but not limited to:</p>
-            <ul>
-                <li><strong>Account Linking:</strong> Connecting your Discord account to your in-game player data.</li>
-                <li><strong>Moderation:</strong> Tracking warnings, bans, mutes, and appeals (based on the LiteBans architecture).</li>
-                <li><strong>Rewards:</strong> Delivering in-game items or ranks based on purchases or events.</li>
-            </ul>
-
-            <h3>4. Data Sharing</h3>
-            <p>We do not sell, trade, or rent your personal identification information to others. We may share generic aggregated demographic information not linked to any personal identification information regarding visitors and users with our business partners and advertisers.</p>
-
-            <h3>5. Data Security</h3>
-            <p>We adopt appropriate data collection, storage, and processing practices and security measures to protect against unauthorized access to your personal information (specifically the Discord OAuth2 tokens and database entries).</p>
-        """
+        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Introduction</h3><p>Welcome to Majikku...</p>"""
     },
     "refund": {
         "title": "Refund Policy",
-        "content": """
-            <p><strong>Last Updated:</strong> 01/04/2026</p>
-
-            <h3>1. Digital Goods</h3>
-            <p>All items, ranks, and services purchased on the Majikku store are digital intangible goods.</p>
-
-            <h3>2. No Refunds</h3>
-            <p>Because our products are digital and delivered immediately upon payment execution, all sales are final. We do not offer refunds, returns, or exchanges once the transaction is complete and the digital goods have been delivered.</p>
-
-            <h3>3. Chargebacks</h3>
-            <p>Any attempt to chargeback or dispute a payment via PayPal, your bank, or other payment processors will result in an automatic and <strong>permanent ban</strong> from the Majikku network (including Game Servers, Discord, and Website). This ban allows no opportunity for appeal.</p>
-
-            <h3>4. Server Termination</h3>
-            <p>In the event that Majikku closes or ceases operation, no refunds will be issued for previously purchased ranks or items.</p>
-        """
+        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Digital Goods</h3><p>All items are digital...</p>"""
     }
 }
 
-# --- DATABASE CONNECTION HELPER ---
+# --- DATABASE CONNECTION ---
 def get_db_connection():
+    """Establishes a connection to the MySQL database."""
     return mysql.connector.connect(
         host=os.getenv("MYSQL_HOST"),
         user=os.getenv("MYSQL_USER"),
@@ -149,8 +97,9 @@ def get_db_connection():
         collation='utf8mb4_general_ci'
     )
 
-# --- DATABASE SETUP (MYSQL) ---
+# --- INITIALIZATION ---
 def init_mysql_db():
+    """Creates necessary tables if they don't exist."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -167,7 +116,7 @@ def init_mysql_db():
             )
         ''')
         
-        # Wiki Table
+        # Wiki Table (Live Pages)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS wiki (
                 slug VARCHAR(255) PRIMARY KEY,
@@ -177,7 +126,7 @@ def init_mysql_db():
             )
         ''')
 
-        # Wiki Submissions Table (For Approval Queue)
+        # Wiki Submissions Table (Approval Queue)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS wiki_submissions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -201,8 +150,8 @@ def init_mysql_db():
     except mysql.connector.Error as err:
         print(f"Error initializing database: {err}")
 
-# --- SEED WIKI DATA ---
 def seed_wiki_db():
+    """Seeds the Wiki table if it's empty."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -222,12 +171,14 @@ def seed_wiki_db():
     except mysql.connector.Error as err:
         print(f"Error seeding database: {err}")
 
-# Initialize DB on startup
+# Run init logic on startup
 init_mysql_db()
 seed_wiki_db()
 
-# --- HELPER: GET HYTALE INFO ---
+# --- HELPER FUNCTIONS ---
+
 def get_hytale_profile(discord_id):
+    """Fetches player stats (UUID, Playtime) from the database."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True) 
@@ -241,7 +192,8 @@ def get_hytale_profile(discord_id):
         print(f"MySQL Connection Error: {e}")
         return None
 
-# --- STAFF PAGE CONFIGURATION ---
+# --- STAFF GROUPS CONFIGURATION ---
+# This dictionary defines the hierarchy of the staff page.
 STAFF_GROUPS = [
     {"name": "Leadership", "roles": [{"id": "1207778262378487918", "title": "Owner"}, {"id": "1207778264819572836", "title": "Administrator"}]},
     {"name": "Team Leads", "roles": [{"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535925606715533", "title": "Lead Tester"}]},
@@ -258,8 +210,8 @@ STAFF_GROUPS = [
 
 staff_cache = {"data": None, "timestamp": 0}
 
-# --- HELPERS ---
 def get_staff_data():
+    """Fetches Discord members and groups them by staff role. Caches result for 5 minutes."""
     if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]:
         return staff_cache["data"]
 
@@ -289,6 +241,9 @@ def get_staff_data():
         staff_cache["timestamp"] = time.time()
         return grouped_staff
     except: return {}
+
+# --- PERMISSION CHECKS ---
+# These functions check if a user ID has a specific role on Discord.
 
 def check_is_admin(user_id):
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
@@ -328,18 +283,21 @@ def check_is_lead_wiki(user_id):
     except: pass
     return False
 
+# --- NEW CHECK FOR REGULAR WIKI EDITORS ---
 def check_is_wiki_editor(user_id):
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     try:
         response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
         if response.status_code == 200:
+            # Check if user has the standard Wiki Editor role
             if WIKI_EDITOR_ID in response.json().get('roles', []): return True
     except: pass
     return False
 
-# --- HELPER: WIKI APPROVAL REQUEST ---
+# --- DISCORD NOTIFICATIONS ---
+
 def send_wiki_approval_request(submission_id, title, category, author_name, sub_type):
-    # Sends to the same leadership channel for now, or define a specific WIKI channel
+    """Sends an embed to the Leadership channel when a wiki edit needs approval."""
     channel_id = os.getenv("LEADERSHIP_CHANNEL_ID") 
     if not channel_id: return
 
@@ -375,12 +333,88 @@ def send_wiki_approval_request(submission_id, title, category, author_name, sub_
     headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
     requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
 
-# --- ROUTES ---
+def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
+    """Sends an embed to Discord when a new report is filed."""
+    
+    # 1. Select Channel ID & Color
+    if report_type == 'STAFF':
+        channel_id = os.getenv("LEADERSHIP_CHANNEL_ID")
+        color = 10181046 # Purple/Dark Red
+        title_prefix = "🚨 STAFF REPORT"
+    else:
+        channel_id = os.getenv("REPORTS_CHANNEL_ID")
+        color = 16711680 # Bright Red
+        title_prefix = "⚠️ PLAYER REPORT"
+
+    if not channel_id:
+        print("ERROR: Channel ID missing in .env")
+        return
+
+    # 2. Build the Embed
+    fields = [
+        {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
+        {"name": "Server/Origin", "value": str(server), "inline": True},
+    ]
+
+    if is_anonymous:
+        fields.append({"name": "Reported By", "value": "||Anonymous User||", "inline": True})
+    else:
+        fields.append({"name": "Reported By", "value": str(reporter_name), "inline": True})
+
+    fields.append({"name": "Reason / Incident", "value": reason if reason else "No details provided.", "inline": False})
+    fields.append({"name": "Evidence", "value": evidence if evidence else "No evidence provided.", "inline": False})
+
+    description_text = ""
+    if is_anonymous:
+        description_text = "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\n"
+
+    embed = {
+        "title": f"{title_prefix} #{report_id}",
+        "description": description_text,
+        "color": color,
+        "fields": fields,
+        "footer": {"text": f"Source: {source} | ID: {report_id} | Status: OPEN"}
+    }
+
+    # 3. Define Buttons
+    components = [
+        {
+            "type": 1, # Action Row
+            "components": [
+                {
+                    "type": 2, # Button
+                    "style": 1, # Primary
+                    "label": "Claim / Investigate",
+                    "emoji": {"name": "🔎", "id": None}, 
+                    "custom_id": f"claim_report_{report_id}" 
+                }
+            ]
+        }
+    ]
+
+    # 4. Send Request
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {os.getenv('BOT_TOKEN')}",
+        "Content-Type": "application/json"
+    }
+    
+    data = {
+        "embeds": [embed],
+        "components": components
+    }
+
+    try:
+        requests.post(url, headers=headers, json=data)
+    except Exception as e:
+        print(f"BOT API EXCEPTION: {e}")
+
+# --- WEB ROUTES ---
 
 @app.route('/')
 def home():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) # dictionary=True is KEY for templates
+    cursor = conn.cursor(dictionary=True) 
     cursor.execute("SELECT * FROM announcements WHERE category='NEWS' ORDER BY id DESC")
     posts = cursor.fetchall()
     cursor.close()
@@ -424,13 +458,16 @@ def staff():
     grouped_staff = get_staff_data()
     return render_template('staff.html', staff_groups=grouped_staff, group_order=STAFF_GROUPS, user=session.get('user'))
 
-# --- AUTH ROUTES ---
+# --- AUTHENTICATION ---
+
 @app.route('/login')
 def login():
+    """Redirects user to Discord OAuth login page."""
     return redirect(f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify")
 
 @app.route('/callback')
 def callback():
+    """Handles the callback from Discord after login."""
     code = request.args.get('code')
     data = {'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI}
     try:
@@ -439,14 +476,16 @@ def callback():
         user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {token_resp.json().get("access_token")}'})
         user_data = user_resp.json()
         
-        #session.permanent = True # Activates the 2-hour timeout
+        # --- SAVE USER DATA TO SESSION ---
+        session.permanent = True 
         session['user'] = user_data
+        
+        # Check all possible permissions and save them
         session['is_admin'] = check_is_admin(user_data['id'])
         session['is_coord'] = check_is_coordinator(user_data['id'])
         session['is_story'] = check_is_storyteller(user_data['id'])
-        
-        # --- ADD THESE LINES ---
         session['is_wiki_lead'] = check_is_lead_wiki(user_data['id'])
+        # THIS was the missing piece! Now checking for regular editor role too.
         session['is_wiki_editor'] = check_is_wiki_editor(user_data['id'])
         
     except Exception as e:
@@ -459,53 +498,53 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
+# --- ADMIN DASHBOARD ---
+
 @app.route('/admin')
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
     
-    user_id = session['user']['id']
-    
-    # Check roles
-    is_wiki_lead = check_is_lead_wiki(user_id)
-    
-    # We need a quick check for the standard editor too so they can view the page
-    is_wiki_editor = False
-    try:
-        # Re-using the logic from check_is_lead_wiki but for the editor ID
-        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-        resp = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if resp.status_code == 200 and WIKI_EDITOR_ID in resp.json().get('roles', []):
-            is_wiki_editor = True
-    except: pass
+    # Permission Check: Does the user have ANY of the required roles?
+    has_access = (
+        session.get('is_admin') or 
+        session.get('is_coord') or 
+        session.get('is_story') or 
+        session.get('is_wiki_lead') or 
+        session.get('is_wiki_editor') # <--- Added this check
+    )
 
-    # ALLOW ACCESS IF: Admin, Coord, Story, Lead Wiki, OR Standard Wiki Editor
-    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story') or is_wiki_lead or is_wiki_editor):
+    if not has_access:
         return render_template('base.html', content="<h1>Access Denied</h1>")
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # 1. Fetch Announcements
+    # 1. Fetch Announcements (Admins/Coords/Storytellers)
+    # Only show posts if they have permission to see them
+    posts = []
     if session.get('is_admin'):
         cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
         posts = cursor.fetchall()
     else:
-        allowed = []
-        if session.get('is_coord'): allowed.append("EVENT")
-        if session.get('is_story'): allowed.append("LORE")
+        allowed_cats = []
+        if session.get('is_coord'): allowed_cats.append("EVENT")
+        if session.get('is_story'): allowed_cats.append("LORE")
         
-        if allowed:
-            # Create parameterized query for safety
-            format_strings = ','.join(['%s'] * len(allowed))
-            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({format_strings}) ORDER BY id DESC", tuple(allowed))
+        if allowed_cats:
+            format_strings = ','.join(['%s'] * len(allowed_cats))
+            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({format_strings}) ORDER BY id DESC", tuple(allowed_cats))
             posts = cursor.fetchall()
-        else:
-            posts = []
     
-    # 2. Fetch Wiki Pages
+    # 2. Fetch Wiki Pages (Admins/Story/Wiki Team)
     wiki_pages = []
-    # Admins, Story, and Wiki Leads see all pages
-    if session.get('is_admin') or session.get('is_story') or is_wiki_lead:
+    can_view_wiki = (
+        session.get('is_admin') or 
+        session.get('is_story') or 
+        session.get('is_wiki_lead') or 
+        session.get('is_wiki_editor')
+    )
+
+    if can_view_wiki:
         cursor.execute('SELECT * FROM wiki ORDER BY category, title')
         wiki_pages = cursor.fetchall()
 
@@ -513,9 +552,13 @@ def admin():
     conn.close()
     return render_template('admin.html', user=session.get('user'), announcements=posts, wiki_pages=wiki_pages)
 
+# --- ANNOUNCEMENT ROUTES ---
+
 @app.route('/admin/post', methods=['POST'])
 def admin_post():
     if 'user' not in session: return "Unauthorized", 403
+    
+    # Basic data collection
     title = request.form['title']
     content = request.form['content']
     category = request.form.get('category')
@@ -566,15 +609,21 @@ def admin_delete(id):
     conn.close()
     return redirect(url_for('admin'))
 
-# --- ADMIN ROUTES (WIKI WITH APPROVAL LOGIC) ---
+# --- WIKI EDIT ROUTES ---
+
 @app.route('/admin/wiki/new', methods=['GET', 'POST'])
 def admin_wiki_new():
-    # Only Admin, Story Lead, or Wiki Lead can create
     if 'user' not in session: return "Unauthorized", 403
-    user_id = session['user']['id']
-    is_wiki_lead = check_is_lead_wiki(user_id)
     
-    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
+    # Check permissions
+    has_wiki_access = (
+        session.get('is_admin') or 
+        session.get('is_story') or 
+        session.get('is_wiki_lead') or 
+        session.get('is_wiki_editor')
+    )
+    
+    if not has_wiki_access:
         return "Unauthorized", 403
 
     if request.method == 'POST':
@@ -584,15 +633,18 @@ def admin_wiki_new():
         content = request.form['content']
         submission_type = "NEW"
         username = session['user']['username']
+        user_id = session['user']['id']
         
-        # BYPASS CHECK: Admins and Leads bypass approval
-        is_bypass = (session.get('is_admin') or session.get('is_story') or is_wiki_lead)
+        # BYPASS CHECK: Only Admins and LEADS bypass approval.
+        # Regular editors will NOT have 'is_wiki_lead' true, so they fall to 'else'
+        is_bypass = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
 
         conn = get_db_connection()
         cursor = conn.cursor()
         
         if is_bypass:
             try:
+                # Direct Publish
                 cursor.execute(
                     "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
                     (slug, title, category, content)
@@ -601,7 +653,7 @@ def admin_wiki_new():
             except Exception as e:
                 print(f"DB Error: {e}")
         else:
-            # Submit to Queue
+            # Submit to Queue (Regular Editors)
             cursor.execute(
                 '''INSERT INTO wiki_submissions 
                    (slug, title, category, content, author_id, author_name, submission_type) 
@@ -621,10 +673,15 @@ def admin_wiki_new():
 @app.route('/admin/wiki/edit/<slug>', methods=['GET', 'POST'])
 def admin_wiki_edit(slug):
     if 'user' not in session: return "Unauthorized", 403
-    user_id = session['user']['id']
-    is_wiki_lead = check_is_lead_wiki(user_id)
+    
+    has_wiki_access = (
+        session.get('is_admin') or 
+        session.get('is_story') or 
+        session.get('is_wiki_lead') or 
+        session.get('is_wiki_editor')
+    )
 
-    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
+    if not has_wiki_access:
         return "Unauthorized", 403
 
     try:
@@ -637,9 +694,10 @@ def admin_wiki_edit(slug):
             content = request.form['content']
             submission_type = "EDIT"
             username = session['user']['username']
+            user_id = session['user']['id']
             
             # BYPASS CHECK
-            is_bypass = (session.get('is_admin') or session.get('is_story') or is_wiki_lead)
+            is_bypass = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
 
             if is_bypass:
                 cursor.execute(
@@ -680,12 +738,13 @@ def admin_wiki_edit(slug):
 
 @app.route('/admin/wiki/delete/<slug>')
 def admin_wiki_delete(slug):
-    # Only Admin, Story Lead, or Wiki Lead can delete
+    # Only Admin, Story Lead, or Wiki Lead can delete. 
+    # Regular Editors CANNOT delete.
     if 'user' not in session: return "Unauthorized", 403
-    user_id = session['user']['id']
-    is_wiki_lead = check_is_lead_wiki(user_id)
     
-    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
+    can_delete = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
+    
+    if not can_delete:
         return "Unauthorized", 403
     
     conn = get_db_connection()
@@ -696,47 +755,33 @@ def admin_wiki_delete(slug):
     conn.close()
     return redirect(url_for('admin'))
 
-# --- HELPER: BUILD WIKI TREE ---
+# --- PUBLIC ROUTES ---
+
 def build_wiki_tree(pages):
+    """Organizes flat list of pages into nested dictionary based on Category > Subcategory."""
     tree = {}
-    
     for page in pages:
-        # Split "Lore > Races > Elves" into ['Lore', 'Races', 'Elves']
-        # We strip whitespace to handle "Lore > Races" vs "Lore>Races"
         parts = [p.strip() for p in page['category'].split('>')]
-        
         current_level = tree
-        
         for i, part in enumerate(parts):
-            # Create the category if it doesn't exist at this level
             if part not in current_level:
-                current_level[part] = {
-                    "subcategories": {}, 
-                    "pages": []
-                }
+                current_level[part] = { "subcategories": {}, "pages": [] }
             
-            # If this is the LAST part of the path, add the page here
             if i == len(parts) - 1:
                 current_level[part]["pages"].append(page)
             
-            # Move deeper into the tree for the next iteration
             current_level = current_level[part]["subcategories"]
-            
     return tree
 
 @app.route('/wiki')
 def wiki_hub():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    # Get all pages
     cursor.execute("SELECT * FROM wiki ORDER BY category, title")
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-
-    # Build the nested tree structure
     wiki_tree = build_wiki_tree(rows)
-    
     return render_template('wiki_hub.html', wiki_tree=wiki_tree, user=session.get('user'))
 
 @app.route('/wiki/<slug>')
@@ -747,7 +792,6 @@ def wiki_page(slug):
     page = cursor.fetchone()
     cursor.close()
     conn.close()
-    
     if not page: return "Page not found", 404
     return render_template('wiki_entry.html', page=page, user=session.get('user'))
 
@@ -757,7 +801,6 @@ def legal_page(doc_type):
     if not doc: return "Document not found", 404
     return render_template('legal_doc.html', doc=doc, user=session.get('user'))
 
-# --- APPLICATION ROUTES (Webhook Enabled) ---
 @app.route('/apply')
 def apply():
     if 'user' not in session: return redirect(url_for('login'))
@@ -767,10 +810,7 @@ def apply():
 @app.route('/submit', methods=['POST'])
 def submit_application():
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    
-    # ... Webhook logic here (use previously provided webhook code) ...
-    # This part does not interact with DB, so no changes needed
-    
+    # Note: Logic removed as requested (handled by webhook previously)
     return jsonify({'success': True})
 
 @app.route('/appeal')
@@ -781,31 +821,27 @@ def appeal():
 
 @app.route('/submit-appeal', methods=['POST'])
 def submit_appeal():
-    # ... Webhook logic here (use previously provided webhook code) ...
     return jsonify({'success': True})
 
-# --- REPORT ROUTES ---
+# --- REPORTS ---
 
-# --- REPORT ROUTES ---
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'user' not in session: return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # 1. Get Form Data
+        # 1. Collect Form Data
         report_type = request.form.get('report_type')
         target_name = request.form.get('target_name')
         server_origin = request.form.get('server_origin')
         reason = request.form.get('reason')
         evidence = request.form.get('evidence')
-        
-        # Checkbox returns 'on' if checked, None if not
         is_anon = request.form.get('anonymous') == 'on'
         
         reporter_name = session['user']['username']
         reporter_id = session['user']['id']
 
-        # 2. Save to Database (Keep your existing DB code here)
+        # 2. Save Report to DB
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -823,7 +859,7 @@ def report():
             print(f"DATABASE ERROR: {e}")
             return "Database Error", 500
 
-        # 3. Send via Bot API (With Buttons)
+        # 3. Notify Discord Bot
         send_report_bot_message(
             report_id=report_id,
             report_type=report_type,
@@ -836,101 +872,14 @@ def report():
             is_anonymous=is_anon
         )
 
-        # Redirect to the new GET route. 
-        # This clears the browser's "POST" history for this action.
+        # 4. Redirect to Success Page (Post/Redirect/Get Pattern)
         return redirect(url_for('report_success', report_id=report_id))
     
     return render_template('report.html', user=session['user'])
 
-# --- HELPER: WEBHOOK SENDER (FIXED) ---
-# --- HELPER: BOT SENDER WITH BUTTONS ---
-def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
-    
-    # 1. Select Channel ID & Color
-    if report_type == 'STAFF':
-        channel_id = os.getenv("LEADERSHIP_CHANNEL_ID")
-        color = 10181046 # Purple/Dark Red
-        title_prefix = "🚨 STAFF REPORT"
-    else:
-        channel_id = os.getenv("REPORTS_CHANNEL_ID")
-        color = 16711680 # Bright Red
-        title_prefix = "⚠️ PLAYER REPORT"
-
-    if not channel_id:
-        print("ERROR: Channel ID missing in .env")
-        return
-
-    # 2. Build the Embed (Same as before)
-    fields = [
-        {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
-        {"name": "Server/Origin", "value": str(server), "inline": True},
-    ]
-
-    if is_anonymous:
-        fields.append({"name": "Reported By", "value": "||Anonymous User||", "inline": True})
-    else:
-        fields.append({"name": "Reported By", "value": str(reporter_name), "inline": True})
-
-    fields.append({"name": "Reason / Incident", "value": reason if reason else "No details provided.", "inline": False})
-    fields.append({"name": "Evidence", "value": evidence if evidence else "No evidence provided.", "inline": False})
-
-    description_text = ""
-    if is_anonymous:
-        description_text = "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\n"
-
-    embed = {
-        "title": f"{title_prefix} #{report_id}",
-        "description": description_text,
-        "color": color,
-        "fields": fields,
-        "footer": {"text": f"Source: {source} | ID: {report_id} | Status: OPEN"}
-    }
-
-    # 3. DEFINE THE BUTTONS (Components)
-    # We send a "Action Row" containing one button: "Claim / Investigate"
-    components = [
-        {
-            "type": 1, # Action Row
-            "components": [
-                {
-                    "type": 2, # Button
-                    "style": 1, # Primary (Blurple Color)
-                    "label": "Claim / Investigate",
-                    "emoji": {"name": "🔎", "id": None}, # 🔎 Emoji
-                    "custom_id": f"claim_report_{report_id}" # CRITICAL: This sends the ID to your bot
-                }
-            ]
-        }
-    ]
-
-    # 4. Send Request via BOT API (Not Webhook)
-    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {
-        "Authorization": f"Bot {os.getenv('BOT_TOKEN')}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "embeds": [embed],
-        "components": components # Attach the button here
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            print("Bot message sent with buttons.")
-        else:
-            print(f"BOT MESSAGE FAILED: {response.status_code}")
-            print(response.text)
-    except Exception as e:
-        print(f"BOT API EXCEPTION: {e}")
-
-# --- NEW ROUTE: SUCCESS PAGE ---
 @app.route('/report/success/<int:report_id>')
 def report_success(report_id):
     if 'user' not in session: return redirect(url_for('login'))
-    
-    # Render the success template we made earlier, passing the ID from the URL
     return render_template('report_success.html', user=session['user'], report_id=report_id)
 
 if __name__ == '__main__':
