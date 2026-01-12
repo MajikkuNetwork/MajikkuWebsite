@@ -204,7 +204,7 @@ def check_is_wiki_editor(uid): return check_role(uid, [WIKI_EDITOR_ID])
 # --- DISCORD MESSAGING ---
 def send_wiki_approval_request(sub_id, title, category, author_name, sub_type):
     """Sends Wiki Approval Embed to Leadership."""
-    channel_id = os.getenv("LEADERSHIP_CHANNEL_ID") 
+    channel_id = os.getenv("WIKI_APPROVAL_CHANNEL_ID") 
     if not channel_id: return
 
     color = 15844367 # Gold
