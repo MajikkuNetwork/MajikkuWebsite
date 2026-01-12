@@ -210,7 +210,7 @@ def get_hytale_profile(discord_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True) 
-        cursor.execute("SELECT username, hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1", (discord_id,))
+        cursor.execute("SELECT hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1", (discord_id,))
         result = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -662,7 +662,13 @@ def apply():
 @app.route('/submit', methods=['POST'])
 def submit_application():
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    return jsonify({'success': True})
+    
+    # 1. SERVER-SIDE CHECK
+    # Even if they hack the HTML button, this stops them here.
+    player_data = get_hytale_profile(session['user']['id'])
+    
+    if not player_data or not player_data.get('hytale_uuid'):
+        return jsonify({'success': False, 'error': 'You must link your Hytale account in-game before applying.'})
 
 @app.route('/appeal')
 def appeal():

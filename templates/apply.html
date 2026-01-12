@@ -80,14 +80,18 @@
 
         <div class="form-group">
             <label>What is your Hytale username?</label>
-            <input type="text" id="hytale_username" 
-                   value="{{ player['username'] if player and player['username'] else '' }}" 
-                   {% if player and player['username'] %} class="read-only" readonly {% endif %} 
-                   required>
-                   
-            {% if player and player['username'] %}
-                <div class="desc-text" style="color: var(--primary); font-weight: bold; margin-top: 5px;">
-                    ✓ Verified via Server Database
+            <input type="text" id="hytale_name" required>
+            
+            {% if player and player['hytale_uuid'] %}
+                <div class="desc-text" style="color: #00ff00; font-weight: bold; margin-top: 5px;">
+                    ✓ Account Linked (UUID Found)
+                </div>
+            {% else %}
+                <div class="desc-text" style="color: #ff4444; font-weight: bold; margin-top: 5px;">
+                    X Account Not Linked
+                </div>
+                <div class="desc-text" style="color: #ff4444; margin-top: 2px;">
+                    You cannot submit an application until you link your account. Please join <strong>play.majikku.net</strong> and type <code>/link</code>.
                 </div>
             {% endif %}
         </div>
@@ -601,7 +605,13 @@
             </div>
         </div>
 
-        <button type="submit" class="submit-btn">Submit Application</button>
+        {% if player and player['hytale_uuid'] %}
+            <button type="submit" class="submit-btn">Submit Application</button>
+        {% else %}
+            <button type="button" class="submit-btn" disabled style="opacity: 0.5; cursor: not-allowed; background: #444;">
+                Link Account Required to Submit
+            </button>
+        {% endif %}
     </form>
 
 
