@@ -5,58 +5,47 @@
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
-    <div style="text-align: center; margin-bottom: 40px;">
-        <h1 style="font-family: 'Cinzel', serif; font-size: 3rem; margin-bottom: 5px;">Admin Console</h1>
-        <p style="color: #888; text-transform: uppercase; letter-spacing: 2px;">Manage the Realm</p>
-    </div>
+    <h1>Admin Console</h1>
+    <p class="subtitle">Manage the Realm</p>
 
     {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') %}
     <div class="admin-box">
-        <h3 style="color:var(--primary); margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px;">
-            Post Announcement
-        </h3>
-        
+        <h3 style="color:var(--primary); margin-top:0;">Post Announcement</h3>
         <form action="/admin/post" method="POST">
-            <div style="margin-bottom: 15px;">
-                <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Title</label>
-                <input type="text" name="title" class="majikku-input" placeholder="Enter title..." required>
-            </div>
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Title</label>
+            <input type="text" name="title" class="majikku-input" placeholder="Enter title..." required>
 
-            <div style="margin-bottom: 15px;">
-                <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Category</label>
-                <select name="category" class="majikku-input" required>
-                    {% if session.get('is_admin') %}
-                        <option value="NEWS" style="color: black;">News (Home)</option>
-                    {% endif %}
-                    
-                    {% if session.get('is_admin') or session.get('is_coord') %}
-                        <option value="EVENT" style="color: black;">Event</option>
-                    {% endif %}
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Category</label>
+            <select name="category" class="majikku-input" required>
+                {% if session.get('is_admin') %}
+                    <option value="NEWS" style="color: black;">News (Home)</option>
+                {% endif %}
+                
+                {% if session.get('is_admin') or session.get('is_coord') %}
+                    <option value="EVENT" style="color: black;">Event</option>
+                {% endif %}
 
-                    {% if session.get('is_admin') or session.get('is_story') %}
-                        <option value="LORE" style="color: black;">Lore Entry</option>
-                    {% endif %}
-                </select>
-            </div>
+                {% if session.get('is_admin') or session.get('is_story') %}
+                    <option value="LORE" style="color: black;">Lore Entry</option>
+                {% endif %}
+            </select>
 
-            <div style="margin-bottom: 15px;">
-                <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Content</label>
-                <textarea id="summernote" name="content"></textarea>
-            </div>
+            <label style="color: var(--primary); font-family: 'Cinzel'; margin-bottom: 5px; display: block;">Content</label>
+            <textarea id="summernote" name="content"></textarea>
 
-            <button type="submit" class="btn-majikku">Publish Announcement</button>
+            <button type="submit" class="submit-btn" style="margin-top: 20px;">Publish Announcement</button>
         </form>
     </div>
 
-    <h2 class="section-title" style="margin-top: 40px; color: white; font-family: 'Cinzel'; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Manage Posts</h2>
+    <h2 class="section-title">Manage Posts</h2>
     <div class="admin-box">
         {% if announcements %}
             {% for post in announcements %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                     <div>
                         <span style="color: var(--primary); font-weight: bold; margin-right: 10px; font-family: 'Cinzel';">[{{ post.category }}]</span>
-                        <span style="font-size: 1.1rem; color: white;">{{ post.title }}</span>
-                        <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">{{ post.created_at }} | By {{ post.author }}</div>
+                        <span style="font-size: 1.1rem;">{{ post.title }}</span>
+                        <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">{{ post.created_at }}</div>
                     </div>
                     <div style="min-width: 150px; text-align: right;">
                         <a href="/admin/edit/{{ post.id }}" style="color: #ffcc00; text-decoration: none; margin-right: 15px; font-weight: bold;">EDIT</a>
@@ -67,7 +56,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <p style="text-align:center; color:#aaa; padding: 20px;">No posts found.</p>
+            <p style="text-align:center; color:#aaa;">No posts found.</p>
         {% endif %}
     </div>
     {% endif %}
@@ -75,32 +64,31 @@
 
     {% if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}
     
-    <h2 class="section-title" style="margin-top: 60px; color: white; font-family: 'Cinzel'; border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">Manage Wiki Pages</h2>
-    
+    <h2 class="section-title">Manage Wiki Pages</h2>
     <div class="admin-box">
         <div style="text-align: right; margin-bottom: 20px;">
-            <a href="/admin/wiki/new" class="btn-majikku" style="text-decoration: none; display: inline-block; width: auto; background: linear-gradient(135deg, #6a11cb, #2575fc); padding: 10px 20px;">+ Create New Wiki Page</a>
+            <a href="/admin/wiki/new" class="submit-btn" style="text-decoration: none; display: inline-block; width: auto; background: var(--secondary);">+ Create New Wiki Page</a>
         </div>
 
         {% if wiki_pages %}
             {% for page in wiki_pages %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                     <div>
-                        <span style="color: #00b4db; font-weight: bold; margin-right: 10px;">[{{ page.category }}]</span>
-                        <span style="font-size: 1.1rem; color: white;">{{ page.title }}</span>
-                        <div style="color: #666; font-size: 0.8rem; margin-top: 5px;">Slug: /wiki/{{ page.slug }}</div>
+                        <span style="color: var(--accent); font-weight: bold; margin-right: 10px;">[{{ page.category }}]</span>
+                        <span style="font-size: 1.1rem;">{{ page.title }}</span>
+                        <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">Slug: /wiki/{{ page.slug }}</div>
                     </div>
                     <div style="min-width: 150px; text-align: right;">
                         <a href="/admin/wiki/edit/{{ page.slug }}" style="color: #ffcc00; text-decoration: none; margin-right: 15px; font-weight: bold;">EDIT</a>
                         
                         {% if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') %}
-                            <a href="/admin/wiki/delete/{{ page.slug }}" style="color: #ff4444; text-decoration: none; font-weight: bold;" onclick="return confirm('Delete this wiki page?')">DELETE</a>
+                        <a href="/admin/wiki/delete/{{ page.slug }}" style="color: #ff4444; text-decoration: none; font-weight: bold;" onclick="return confirm('Delete this wiki page?')">DELETE</a>
                         {% endif %}
                     </div>
                 </div>
             {% endfor %}
         {% else %}
-            <p style="text-align:center; color:#aaa; padding: 20px;">No wiki pages found.</p>
+            <p style="text-align:center; color:#aaa;">No wiki pages found.</p>
         {% endif %}
     </div>
     {% endif %}
@@ -119,7 +107,6 @@
               ['insert', ['link', 'picture', 'video']],
               ['view', ['fullscreen', 'codeview', 'help']]
             ],
-            // Dark Mode tweaks for Summernote
             callbacks: {
                 onInit: function() {
                     $('.note-editable').css('background-color', '#2b2d31').css('color', 'white');
@@ -129,26 +116,4 @@
             }
         });
     </script>
-
-    <style>
-        .admin-box {
-            background-color: #2b2d31; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 8px; 
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .majikku-input {
-            width: 100%;
-            background-color: #1a1c20;
-            border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .majikku-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-    </style>
 {% endblock %}
