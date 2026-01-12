@@ -79,8 +79,17 @@
         </div>
 
         <div class="form-group">
-            <label>What is your Hytale name?</label>
-            <input type="text" id="hytale_name" required>
+            <label>What is your Hytale username?</label>
+            <input type="text" id="hytale_username" 
+                   value="{{ player['username'] if player and player['username'] else '' }}" 
+                   {% if player and player['username'] %} class="read-only" readonly {% endif %} 
+                   required>
+                   
+            {% if player and player['username'] %}
+                <div class="desc-text" style="color: var(--primary); font-weight: bold; margin-top: 5px;">
+                    ✓ Verified via Server Database
+                </div>
+            {% endif %}
         </div>
 
         <div style="display: flex; gap: 20px;">
