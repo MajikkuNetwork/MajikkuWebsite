@@ -4,55 +4,42 @@ import os
 import time
 import mysql.connector 
 from dotenv import load_dotenv
-from datetime import timedelta 
 
-# Load environment variables from .env file
+# Load .env variables
 load_dotenv()
 
 app = Flask(__name__)
-# The secret key is used to sign session cookies for security
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))
 
-# --- SESSION CONFIGURATION ---
-# This ensures users stay logged in for 2 hours, then must re-login
-app.permanent_session_lifetime = timedelta(hours=2)
-
 # --- CONFIGURATION VARIABLES ---
-# These pull from your .env file
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 
-# Webhook URLs
+# Webhooks
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
 APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") 
 
-# OAuth Settings
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 API_ENDPOINT = 'https://discord.com/api/v10'
 
 # --- ROLE IDS ---
-# IDs allowed to access Admin Panel (Owner/Admin)
+# Admin Panel Access (Full Control)
 ADMIN_ROLE_IDS = [
     "1207778262378487918", # Owner
     "1207778264819572836"  # Administrator
 ]
 
-# ID allowed to post Events only
+# Event & Lore Leads
 LEAD_COORDINATOR_ID = "1207778273791184927"
-
-# ID allowed to edit Wiki (Bypass Approval)
 LEAD_STORYTELLER_ID = "1452004814375616765"
-LEAD_WIKI_EDITOR_ID = "1454631224592171099" 
 
-# ID allowed to edit Wiki (REQUIRES Approval)
-WIKI_EDITOR_ID = "1454631225309401269" 
+# Wiki Roles
+LEAD_WIKI_EDITOR_ID = "1454631224592171099" # Can Publish Directly
+WIKI_EDITOR_ID = "1454631225309401269"      # Can Submit for Approval (Limited Access)
 
-
-# --- WIKI & LEGAL DATA (Hardcoded Content) ---
-# These dictionaries hold the initial content for the Wiki and Legal pages.
-# They are only used once to "seed" the database if it is empty.
+# --- INITIAL WIKI DATA (Seeding) ---
 INITIAL_WIKI_DATA = {
     "getting-started": {
         "title": "Getting Started",
@@ -74,21 +61,34 @@ INITIAL_WIKI_DATA = {
 LEGAL_DATA = {
     "tos": {
         "title": "Terms of Service",
-        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Acceptance of Terms</h3><p>By accessing Majikku...</p>"""
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+            <h3>1. Acceptance of Terms</h3>
+            <p>By accessing or using Majikku (the "Service"), including our game servers, Discord server, and website, you agree to be bound by these Terms.</p>
+            <h3>2. User Conduct</h3>
+            <p>You agree to follow all rules outlined in our Rules Document.</p>
+        """
     },
     "privacy": {
         "title": "Privacy Policy",
-        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Introduction</h3><p>Welcome to Majikku...</p>"""
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+            <h3>1. Introduction</h3>
+            <p>Welcome to Majikku. We are committed to protecting your privacy.</p>
+        """
     },
     "refund": {
         "title": "Refund Policy",
-        "content": """<p><strong>Last Updated:</strong> 01/04/2026</p><h3>1. Digital Goods</h3><p>All items are digital...</p>"""
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+            <h3>1. Digital Goods</h3>
+            <p>All sales are final.</p>
+        """
     }
 }
 
 # --- DATABASE CONNECTION ---
 def get_db_connection():
-    """Establishes a connection to the MySQL database."""
     return mysql.connector.connect(
         host=os.getenv("MYSQL_HOST"),
         user=os.getenv("MYSQL_USER"),
@@ -97,14 +97,13 @@ def get_db_connection():
         collation='utf8mb4_general_ci'
     )
 
-# --- INITIALIZATION ---
+# --- DATABASE INIT ---
 def init_mysql_db():
-    """Creates necessary tables if they don't exist."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Announcements Table
+        # Create Tables
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS announcements (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -116,7 +115,6 @@ def init_mysql_db():
             )
         ''')
         
-        # Wiki Table (Live Pages)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS wiki (
                 slug VARCHAR(255) PRIMARY KEY,
@@ -126,7 +124,6 @@ def init_mysql_db():
             )
         ''')
 
-        # Wiki Submissions Table (Approval Queue)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS wiki_submissions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -136,64 +133,54 @@ def init_mysql_db():
                 content LONGTEXT,
                 author_id VARCHAR(50),
                 author_name VARCHAR(100),
-                submission_type VARCHAR(10), -- 'NEW' or 'EDIT'
+                submission_type VARCHAR(10),
                 status VARCHAR(20) DEFAULT 'PENDING',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 denial_reason TEXT DEFAULT NULL
             )
         ''')
         
+        # Note: Applications DB logic removed as requested, keeping purely for placeholders if needed later
+        
         conn.commit()
         cursor.close()
         conn.close()
-        print("Database tables checked/initialized.")
+        print("✅ Database initialized.")
     except mysql.connector.Error as err:
-        print(f"Error initializing database: {err}")
+        print(f"❌ Error initializing database: {err}")
 
 def seed_wiki_db():
-    """Seeds the Wiki table if it's empty."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT count(*) FROM wiki")
-        count = cursor.fetchone()[0]
-        
-        if count == 0:
-            print("Seeding Wiki Database...")
+        if cursor.fetchone()[0] == 0:
+            print("🌱 Seeding Wiki Database...")
             for slug, data in INITIAL_WIKI_DATA.items():
-                cursor.execute(
-                    "INSERT INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)",
-                    (slug, data['title'], data['category'], data['content'])
-                )
+                cursor.execute("INSERT INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", (slug, data['title'], data['category'], data['content']))
             conn.commit()
         cursor.close()
         conn.close()
     except mysql.connector.Error as err:
-        print(f"Error seeding database: {err}")
+        print(f"❌ Error seeding database: {err}")
 
-# Run init logic on startup
 init_mysql_db()
 seed_wiki_db()
 
 # --- HELPER FUNCTIONS ---
 
 def get_hytale_profile(discord_id):
-    """Fetches player stats (UUID, Playtime) from the database."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True) 
-        query = "SELECT username, hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1"
-        cursor.execute(query, (discord_id,))
+        cursor.execute("SELECT username, hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1", (discord_id,))
         result = cursor.fetchone()
         cursor.close()
         conn.close()
         return result
-    except Exception as e:
-        print(f"MySQL Connection Error: {e}")
-        return None
+    except: return None
 
-# --- STAFF GROUPS CONFIGURATION ---
-# This dictionary defines the hierarchy of the staff page.
+# --- STAFF CACHE ---
 STAFF_GROUPS = [
     {"name": "Leadership", "roles": [{"id": "1207778262378487918", "title": "Owner"}, {"id": "1207778264819572836", "title": "Administrator"}]},
     {"name": "Team Leads", "roles": [{"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535925606715533", "title": "Lead Tester"}]},
@@ -211,91 +198,45 @@ STAFF_GROUPS = [
 staff_cache = {"data": None, "timestamp": 0}
 
 def get_staff_data():
-    """Fetches Discord members and groups them by staff role. Caches result for 5 minutes."""
-    if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]:
-        return staff_cache["data"]
-
+    if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]: return staff_cache["data"]
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     try:
         response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members?limit=1000", headers=headers)
         if response.status_code != 200: return {}
-
         members = response.json()
-        grouped_staff = {group["name"]: [] for group in STAFF_GROUPS}
-        
+        grouped = {group["name"]: [] for group in STAFF_GROUPS}
         for member in members:
             user = member.get("user", {})
             user_roles = member.get("roles", [])
-            avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png" if user.get("avatar") else "https://cdn.discordapp.com/embed/avatars/0.png"
-
+            avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png" if user.get("avatar") else "https://cdn.discordapp.com/embed/avatars/0.png"
             for group in STAFF_GROUPS:
-                found_title = None
-                for role_def in group["roles"]:
-                    if role_def["id"] in user_roles:
-                        found_title = role_def["title"]
-                        break
-                if found_title:
-                    grouped_staff[group["name"]].append({"name": member.get("nick") or user.get("username"), "avatar": avatar_url, "role": found_title})
-
-        staff_cache["data"] = grouped_staff
-        staff_cache["timestamp"] = time.time()
-        return grouped_staff
+                found = None
+                for r in group["roles"]:
+                    if r["id"] in user_roles: found = r["title"]; break
+                if found: grouped[group["name"]].append({"name": member.get("nick") or user.get("username"), "avatar": avatar, "role": found})
+        staff_cache["data"] = grouped; staff_cache["timestamp"] = time.time()
+        return grouped
     except: return {}
 
-# --- PERMISSION CHECKS ---
-# These functions check if a user ID has a specific role on Discord.
-
-def check_is_admin(user_id):
+# --- ROLE CHECKS ---
+def check_role(user_id, role_ids):
+    """Generic helper to check if user has ANY of the role_ids."""
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if response.status_code == 200:
-            roles = response.json().get('roles', [])
-            for role_id in roles:
-                if role_id in ADMIN_ROLE_IDS: return True
+        r = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if r.status_code == 200:
+            user_roles = r.json().get('roles', [])
+            return any(rid in user_roles for rid in role_ids)
     except: pass
     return False
 
-def check_is_coordinator(user_id):
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if response.status_code == 200:
-            if LEAD_COORDINATOR_ID in response.json().get('roles', []): return True
-    except: pass
-    return False
+def check_is_admin(uid): return check_role(uid, ADMIN_ROLE_IDS)
+def check_is_coordinator(uid): return check_role(uid, [LEAD_COORDINATOR_ID])
+def check_is_storyteller(uid): return check_role(uid, [LEAD_STORYTELLER_ID])
+def check_is_lead_wiki(uid): return check_role(uid, [LEAD_WIKI_EDITOR_ID])
+def check_is_wiki_editor(uid): return check_role(uid, [WIKI_EDITOR_ID])
 
-def check_is_storyteller(user_id):
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if response.status_code == 200:
-            if LEAD_STORYTELLER_ID in response.json().get('roles', []): return True
-    except: pass
-    return False
-
-def check_is_lead_wiki(user_id):
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if response.status_code == 200:
-            if LEAD_WIKI_EDITOR_ID in response.json().get('roles', []): return True
-    except: pass
-    return False
-
-# --- NEW CHECK FOR REGULAR WIKI EDITORS ---
-def check_is_wiki_editor(user_id):
-    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
-        if response.status_code == 200:
-            # Check if user has the standard Wiki Editor role
-            if WIKI_EDITOR_ID in response.json().get('roles', []): return True
-    except: pass
-    return False
-
-# --- DISCORD NOTIFICATIONS ---
-
+# --- DISCORD MESSAGING ---
 def send_wiki_approval_request(submission_id, title, category, author_name, sub_type):
     """Sends an embed to the Leadership channel when a wiki edit needs approval."""
     channel_id = os.getenv("LEADERSHIP_CHANNEL_ID") 
@@ -336,7 +277,6 @@ def send_wiki_approval_request(submission_id, title, category, author_name, sub_
 def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
     """Sends an embed to Discord when a new report is filed."""
     
-    # 1. Select Channel ID & Color
     if report_type == 'STAFF':
         channel_id = os.getenv("LEADERSHIP_CHANNEL_ID")
         color = 10181046 # Purple/Dark Red
@@ -350,7 +290,6 @@ def send_report_bot_message(report_id, report_type, source, reporter_name, targe
         print("ERROR: Channel ID missing in .env")
         return
 
-    # 2. Build the Embed
     fields = [
         {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
         {"name": "Server/Origin", "value": str(server), "inline": True},
@@ -376,14 +315,13 @@ def send_report_bot_message(report_id, report_type, source, reporter_name, targe
         "footer": {"text": f"Source: {source} | ID: {report_id} | Status: OPEN"}
     }
 
-    # 3. Define Buttons
     components = [
         {
-            "type": 1, # Action Row
+            "type": 1, 
             "components": [
                 {
-                    "type": 2, # Button
-                    "style": 1, # Primary
+                    "type": 2, 
+                    "style": 1, 
                     "label": "Claim / Investigate",
                     "emoji": {"name": "🔎", "id": None}, 
                     "custom_id": f"claim_report_{report_id}" 
@@ -392,82 +330,17 @@ def send_report_bot_message(report_id, report_type, source, reporter_name, targe
         }
     ]
 
-    # 4. Send Request
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {
-        "Authorization": f"Bot {os.getenv('BOT_TOKEN')}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "embeds": [embed],
-        "components": components
-    }
+    headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
+    requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
 
-    try:
-        requests.post(url, headers=headers, json=data)
-    except Exception as e:
-        print(f"BOT API EXCEPTION: {e}")
-
-# --- WEB ROUTES ---
-
-@app.route('/')
-def home():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) 
-    cursor.execute("SELECT * FROM announcements WHERE category='NEWS' ORDER BY id DESC")
-    posts = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('home.html', user=session.get('user'), announcements=posts)
-
-@app.route('/events')
-def events():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM announcements WHERE category='EVENT' ORDER BY id DESC")
-    posts = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('events.html', user=session.get('user'), announcements=posts)
-
-@app.route('/lore')
-def lore():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM announcements WHERE category='LORE' ORDER BY id DESC")
-    posts = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('lore.html', user=session.get('user'), announcements=posts)
-
-@app.route('/rules')
-def rules():
-    return render_template('rules.html', user=session.get('user'))
-
-@app.route('/socials')
-def socials():
-    return render_template('socials.html', user=session.get('user'))
-
-@app.route('/info')
-def info():
-    return render_template('info.html', user=session.get('user'))
-
-@app.route('/staff')
-def staff():
-    grouped_staff = get_staff_data()
-    return render_template('staff.html', staff_groups=grouped_staff, group_order=STAFF_GROUPS, user=session.get('user'))
-
-# --- AUTHENTICATION ---
-
+# --- ROUTES: AUTH ---
 @app.route('/login')
 def login():
-    """Redirects user to Discord OAuth login page."""
     return redirect(f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=identify")
 
 @app.route('/callback')
 def callback():
-    """Handles the callback from Discord after login."""
     code = request.args.get('code')
     data = {'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI}
     try:
@@ -476,17 +349,15 @@ def callback():
         user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {token_resp.json().get("access_token")}'})
         user_data = user_resp.json()
         
-        # --- SAVE USER DATA TO SESSION ---
-        session.permanent = True 
+        # SAVE USER & ROLES TO SESSION
+        # We removed the 'permanent' flag, so session lasts until browser close (default)
         session['user'] = user_data
         
-        # Check all possible permissions and save them
         session['is_admin'] = check_is_admin(user_data['id'])
         session['is_coord'] = check_is_coordinator(user_data['id'])
         session['is_story'] = check_is_storyteller(user_data['id'])
         session['is_wiki_lead'] = check_is_lead_wiki(user_data['id'])
-        # THIS was the missing piece! Now checking for regular editor role too.
-        session['is_wiki_editor'] = check_is_wiki_editor(user_data['id'])
+        session['is_wiki_editor'] = check_is_wiki_editor(user_data['id']) # Check permissions for normal wiki editor
         
     except Exception as e:
         return f"Login Error: {e}"
@@ -498,19 +369,18 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# --- ADMIN DASHBOARD ---
-
+# --- ROUTES: ADMIN DASHBOARD ---
 @app.route('/admin')
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
     
-    # Permission Check: Does the user have ANY of the required roles?
+    # Permission Check
     has_access = (
         session.get('is_admin') or 
         session.get('is_coord') or 
         session.get('is_story') or 
         session.get('is_wiki_lead') or 
-        session.get('is_wiki_editor') # <--- Added this check
+        session.get('is_wiki_editor')
     )
 
     if not has_access:
@@ -519,23 +389,21 @@ def admin():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # 1. Fetch Announcements (Admins/Coords/Storytellers)
-    # Only show posts if they have permission to see them
+    # 1. Fetch Announcements
     posts = []
     if session.get('is_admin'):
         cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
         posts = cursor.fetchall()
     else:
-        allowed_cats = []
-        if session.get('is_coord'): allowed_cats.append("EVENT")
-        if session.get('is_story'): allowed_cats.append("LORE")
-        
-        if allowed_cats:
-            format_strings = ','.join(['%s'] * len(allowed_cats))
-            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({format_strings}) ORDER BY id DESC", tuple(allowed_cats))
+        allowed = []
+        if session.get('is_coord'): allowed.append("EVENT")
+        if session.get('is_story'): allowed.append("LORE")
+        if allowed:
+            fmt = ','.join(['%s'] * len(allowed))
+            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({fmt}) ORDER BY id DESC", tuple(allowed))
             posts = cursor.fetchall()
     
-    # 2. Fetch Wiki Pages (Admins/Story/Wiki Team)
+    # 2. Fetch Wiki Pages
     wiki_pages = []
     can_view_wiki = (
         session.get('is_admin') or 
@@ -552,13 +420,10 @@ def admin():
     conn.close()
     return render_template('admin.html', user=session.get('user'), announcements=posts, wiki_pages=wiki_pages)
 
-# --- ANNOUNCEMENT ROUTES ---
-
+# --- ROUTES: ANNOUNCEMENTS ---
 @app.route('/admin/post', methods=['POST'])
 def admin_post():
     if 'user' not in session: return "Unauthorized", 403
-    
-    # Basic data collection
     title = request.form['title']
     content = request.form['content']
     category = request.form.get('category')
@@ -566,10 +431,7 @@ def admin_post():
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO announcements (title, content, category, author) VALUES (%s, %s, %s, %s)', 
-        (title, content, category, author)
-    )
+    cursor.execute('INSERT INTO announcements (title, content, category, author) VALUES (%s, %s, %s, %s)', (title, content, category, author))
     conn.commit()
     cursor.close()
     conn.close()
@@ -578,15 +440,11 @@ def admin_post():
 @app.route('/admin/edit/<int:id>', methods=['GET', 'POST'])
 def admin_edit(id):
     if 'user' not in session: return redirect(url_for('login'))
-    
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     if request.method == 'POST':
-        cursor.execute(
-            "UPDATE announcements SET title = %s, content = %s WHERE id = %s", 
-            (request.form['title'], request.form['content'], id)
-        )
+        cursor.execute("UPDATE announcements SET title = %s, content = %s WHERE id = %s", (request.form['title'], request.form['content'], id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -609,60 +467,36 @@ def admin_delete(id):
     conn.close()
     return redirect(url_for('admin'))
 
-# --- WIKI EDIT ROUTES ---
-
+# --- ROUTES: WIKI EDITING ---
 @app.route('/admin/wiki/new', methods=['GET', 'POST'])
 def admin_wiki_new():
     if 'user' not in session: return "Unauthorized", 403
     
-    # Check permissions
-    has_wiki_access = (
-        session.get('is_admin') or 
-        session.get('is_story') or 
-        session.get('is_wiki_lead') or 
-        session.get('is_wiki_editor')
-    )
-    
-    if not has_wiki_access:
-        return "Unauthorized", 403
+    has_access = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor'))
+    if not has_access: return "Unauthorized", 403
 
     if request.method == 'POST':
         slug = request.form['slug'].lower().replace(" ", "-")
         title = request.form['title']
         category = request.form['category']
         content = request.form['content']
-        submission_type = "NEW"
         username = session['user']['username']
         user_id = session['user']['id']
         
-        # BYPASS CHECK: Only Admins and LEADS bypass approval.
-        # Regular editors will NOT have 'is_wiki_lead' true, so they fall to 'else'
+        # BYPASS LOGIC: Admin/Story/LeadWiki = Direct Publish. Regular Wiki = Queue.
         is_bypass = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
 
         conn = get_db_connection()
         cursor = conn.cursor()
         
         if is_bypass:
-            try:
-                # Direct Publish
-                cursor.execute(
-                    "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
-                    (slug, title, category, content)
-                )
-                conn.commit()
-            except Exception as e:
-                print(f"DB Error: {e}")
+            cursor.execute("REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", (slug, title, category, content))
+            conn.commit()
         else:
-            # Submit to Queue (Regular Editors)
-            cursor.execute(
-                '''INSERT INTO wiki_submissions 
-                   (slug, title, category, content, author_id, author_name, submission_type) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                (slug, title, category, content, user_id, username, submission_type)
-            )
+            cursor.execute('''INSERT INTO wiki_submissions (slug, title, category, content, author_id, author_name, submission_type) VALUES (%s, %s, %s, %s, %s, %s, 'NEW')''', (slug, title, category, content, user_id, username))
             conn.commit()
             sub_id = cursor.lastrowid
-            send_wiki_approval_request(sub_id, title, category, username, submission_type)
+            send_wiki_approval_request(sub_id, title, category, username, "NEW")
         
         cursor.close()
         conn.close()
@@ -674,15 +508,8 @@ def admin_wiki_new():
 def admin_wiki_edit(slug):
     if 'user' not in session: return "Unauthorized", 403
     
-    has_wiki_access = (
-        session.get('is_admin') or 
-        session.get('is_story') or 
-        session.get('is_wiki_lead') or 
-        session.get('is_wiki_editor')
-    )
-
-    if not has_wiki_access:
-        return "Unauthorized", 403
+    has_access = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor'))
+    if not has_access: return "Unauthorized", 403
 
     try:
         conn = get_db_connection()
@@ -692,60 +519,40 @@ def admin_wiki_edit(slug):
             title = request.form['title']
             category = request.form['category']
             content = request.form['content']
-            submission_type = "EDIT"
             username = session['user']['username']
             user_id = session['user']['id']
             
-            # BYPASS CHECK
             is_bypass = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
 
             if is_bypass:
-                cursor.execute(
-                    "UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", 
-                    (title, category, content, slug)
-                )
+                cursor.execute("UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", (title, category, content, slug))
                 conn.commit()
             else:
-                # Submit to Queue
-                cursor.execute(
-                    '''INSERT INTO wiki_submissions 
-                       (slug, title, category, content, author_id, author_name, submission_type) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                    (slug, title, category, content, user_id, username, submission_type)
-                )
+                cursor.execute('''INSERT INTO wiki_submissions (slug, title, category, content, author_id, author_name, submission_type) VALUES (%s, %s, %s, %s, %s, %s, 'EDIT')''', (slug, title, category, content, user_id, username))
                 conn.commit()
                 sub_id = cursor.lastrowid
-                send_wiki_approval_request(sub_id, title, category, username, submission_type)
+                send_wiki_approval_request(sub_id, title, category, username, "EDIT")
 
             cursor.close()
             conn.close()
             return redirect(url_for('admin'))
 
         cursor.execute("SELECT * FROM wiki WHERE slug = %s", (slug,))
-        page_data = cursor.fetchone()
-        
+        page = cursor.fetchone()
         cursor.close()
         conn.close()
-        
-        if not page_data:
-            return "Page not found", 404
-        
-        return render_template('edit_wiki.html', page=page_data, user=session.get('user'))
+        return render_template('edit_wiki.html', page=page, user=session.get('user'))
         
     except Exception as e:
-        print(f"ERROR in Wiki Edit: {e}") 
-        return f"Internal Error: {e}", 500
+        return f"Error: {e}", 500
 
 @app.route('/admin/wiki/delete/<slug>')
 def admin_wiki_delete(slug):
-    # Only Admin, Story Lead, or Wiki Lead can delete. 
-    # Regular Editors CANNOT delete.
     if 'user' not in session: return "Unauthorized", 403
     
+    # Wiki Editors CANNOT delete. Only Leads/Admins.
     can_delete = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
-    
-    if not can_delete:
-        return "Unauthorized", 403
+    if not can_delete: return "Unauthorized", 403
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -756,20 +563,14 @@ def admin_wiki_delete(slug):
     return redirect(url_for('admin'))
 
 # --- PUBLIC ROUTES ---
-
 def build_wiki_tree(pages):
-    """Organizes flat list of pages into nested dictionary based on Category > Subcategory."""
     tree = {}
     for page in pages:
         parts = [p.strip() for p in page['category'].split('>')]
         current_level = tree
         for i, part in enumerate(parts):
-            if part not in current_level:
-                current_level[part] = { "subcategories": {}, "pages": [] }
-            
-            if i == len(parts) - 1:
-                current_level[part]["pages"].append(page)
-            
+            if part not in current_level: current_level[part] = { "subcategories": {}, "pages": [] }
+            if i == len(parts) - 1: current_level[part]["pages"].append(page)
             current_level = current_level[part]["subcategories"]
     return tree
 
@@ -779,10 +580,8 @@ def wiki_hub():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM wiki ORDER BY category, title")
     rows = cursor.fetchall()
-    cursor.close()
     conn.close()
-    wiki_tree = build_wiki_tree(rows)
-    return render_template('wiki_hub.html', wiki_tree=wiki_tree, user=session.get('user'))
+    return render_template('wiki_hub.html', wiki_tree=build_wiki_tree(rows), user=session.get('user'))
 
 @app.route('/wiki/<slug>')
 def wiki_page(slug):
@@ -790,7 +589,6 @@ def wiki_page(slug):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM wiki WHERE slug=%s", (slug,))
     page = cursor.fetchone()
-    cursor.close()
     conn.close()
     if not page: return "Page not found", 404
     return render_template('wiki_entry.html', page=page, user=session.get('user'))
@@ -810,7 +608,6 @@ def apply():
 @app.route('/submit', methods=['POST'])
 def submit_application():
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    # Note: Logic removed as requested (handled by webhook previously)
     return jsonify({'success': True})
 
 @app.route('/appeal')
@@ -824,13 +621,11 @@ def submit_appeal():
     return jsonify({'success': True})
 
 # --- REPORTS ---
-
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'user' not in session: return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # 1. Collect Form Data
         report_type = request.form.get('report_type')
         target_name = request.form.get('target_name')
         server_origin = request.form.get('server_origin')
@@ -841,16 +636,10 @@ def report():
         reporter_name = session['user']['username']
         reporter_id = session['user']['id']
 
-        # 2. Save Report to DB
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute(
-                '''INSERT INTO reports 
-                   (type, source, reporter_id, reported_name, server_origin, reason, evidence, is_anonymous) 
-                   VALUES (%s, 'WEBSITE', %s, %s, %s, %s, %s, %s)''',
-                (report_type, reporter_id, target_name, server_origin, reason, evidence, 1 if is_anon else 0)
-            )
+            cursor.execute('''INSERT INTO reports (type, source, reporter_id, reported_name, server_origin, reason, evidence, is_anonymous) VALUES (%s, 'WEBSITE', %s, %s, %s, %s, %s, %s)''', (report_type, reporter_id, target_name, server_origin, reason, evidence, 1 if is_anon else 0))
             conn.commit()
             report_id = cursor.lastrowid
             cursor.close()
@@ -859,20 +648,7 @@ def report():
             print(f"DATABASE ERROR: {e}")
             return "Database Error", 500
 
-        # 3. Notify Discord Bot
-        send_report_bot_message(
-            report_id=report_id,
-            report_type=report_type,
-            source="WEBSITE",
-            reporter_name=reporter_name,
-            target_name=target_name,
-            server=server_origin,
-            reason=reason,
-            evidence=evidence,
-            is_anonymous=is_anon
-        )
-
-        # 4. Redirect to Success Page (Post/Redirect/Get Pattern)
+        send_report_bot_message(report_id, report_type, "WEBSITE", reporter_name, target_name, server_origin, reason, evidence, is_anon)
         return redirect(url_for('report_success', report_id=report_id))
     
     return render_template('report.html', user=session['user'])
