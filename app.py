@@ -686,8 +686,9 @@ def report():
             is_anonymous=is_anon
         )
 
-        return render_template('report_success.html', user=session['user'])
-
+        # Pass the report_id to the template
+        return render_template('report_success.html', user=session['user'], report_id=report_id)
+    
     return render_template('report.html', user=session['user'])
 
 # --- HELPER: WEBHOOK SENDER (FIXED) ---

@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container text-center" style="margin-top: 100px;">
-    <h1 class="text-success">Report Submitted</h1>
-    <p>Thank you for helping keep Majikku safe.</p>
-    <p>Your report ID has been logged and sent to the appropriate team.</p>
+    <h1 class="text-success" style="font-family: 'Cinzel', serif;">Report Submitted</h1>
+    
+    <div class="card bg-dark border-success mx-auto mt-4" style="max-width: 400px; padding: 20px;">
+        <h4 class="text-white mb-0">Your Report ID</h4>
+        <h1 style="color: #00b4db; font-size: 3rem; margin: 10px 0;">#{{ report_id }}</h1>
+        <p class="text-muted">Please save this number for your records.</p>
+    </div>
+
+    <p class="mt-4">Thank you for helping keep Majikku safe.</p>
     <a href="/" class="btn btn-primary mt-3">Return Home</a>
 </div>
 {% endblock %}
