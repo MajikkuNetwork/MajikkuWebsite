@@ -163,10 +163,13 @@
             <COMMENT><a href="https://store.majikku.org" target="_blank" class="nav-highlight">Store</a></COMMENT>
             <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" class="nav-highlight">Discord</a>
             <a href="/legal/tos">Legal</a>
-            
+
             {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}
-                    <a class="nav-link" href="/admin">Admin</a>
+                <li class="nav-item">
+                    <a href="/admin" class="nav-btn-admin">Admin</a>
+                </li>
             {% endif %}
+
 
             {% if session.get('user') %}
                 <a href="/logout" class="nav-btn-logout">Logout</a>
