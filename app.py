@@ -271,31 +271,55 @@ def login():
 
 @app.route('/callback')
 def callback():
+    # 1. SAFETY CHECK: If user is already logged in, ignore the code and go home.
+    # This prevents the "Bad Request" error if you refresh the page.
+    if 'user' in session:
+        return redirect(url_for('home'))
+
     code = request.args.get('code')
-    data = {'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI}
+    if not code:
+        return redirect(url_for('login'))
+
+    data = {
+        'client_id': CLIENT_ID, 
+        'client_secret': CLIENT_SECRET, 
+        'grant_type': 'authorization_code', 
+        'code': code, 
+        'redirect_uri': REDIRECT_URI
+    }
+
     try:
-        # 1. Get Token
+        # 2. Exchange Code for Token
         token_resp = requests.post(f'{API_ENDPOINT}/oauth2/token', data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
-        token_resp.raise_for_status()
+        token_resp.raise_for_status() # This raises the error if it fails
         
-        # 2. Get User
+        # 3. Get User Info
         user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {token_resp.json().get("access_token")}'})
         user_data = user_resp.json()
         
-        # 3. Start Session (No timeout/TTL logic)
+        # 4. Save Session
         session['user'] = user_data
         
-        # 4. CHECK PERMISSIONS (ID Card Stamping)
-        # This runs ONCE when you log in. It checks your roles and saves the result to the session.
+        # 5. Check Permissions
         uid = user_data['id']
         session['is_admin'] = check_is_admin(uid)
         session['is_coord'] = check_is_coordinator(uid)
         session['is_story'] = check_is_storyteller(uid)
         session['is_wiki_lead'] = check_is_lead_wiki(uid)
-        session['is_wiki_editor'] = check_is_wiki_editor(uid) # <--- Checks if you have the Wiki Editor role
+        session['is_wiki_editor'] = check_is_wiki_editor(uid)
+        
+    except requests.exceptions.HTTPError as e:
+        # If Discord says "Bad Request" (400), it usually means the code expired or was reused.
+        # Instead of showing an error page, simply restart the login process.
+        if e.response.status_code == 400:
+            print(f"OAuth Code invalid or expired (User likely refreshed): {e}")
+            return redirect(url_for('login'))
+        return f"Login Error: {e}"
         
     except Exception as e:
-        return f"Login Error: {e}"
+        return f"Internal Login Error: {e}"
+    
+    return redirect(url_for('home'))
     
     return redirect(url_for('home'))
 
