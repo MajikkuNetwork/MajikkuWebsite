@@ -4,11 +4,15 @@ import os
 import time
 import mysql.connector 
 from dotenv import load_dotenv
+from datetime import timedelta # <--- Added for session timeout
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))
+
+# --- SESSION CONFIGURATION ---
+app.permanent_session_lifetime = timedelta(hours=2) # Sessions expire after 2 hours
 
 # --- CONFIGURATION ---
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -32,8 +36,9 @@ ADMIN_ROLE_IDS = [
 # ID allowed to post Events only
 LEAD_COORDINATOR_ID = "1207778273791184927"
 
-# ID allowed to post Lore only
+# ID allowed to edit Wiki
 LEAD_STORYTELLER_ID = "1452004814375616765"
+LEAD_WIKI_EDITOR_ID = "1454631224592171099" # <--- Lead Wiki Editor
 
 # --- OLD HARDCODED WIKI DATA (For seeding DB only) ---
 INITIAL_WIKI_DATA = {
@@ -140,7 +145,7 @@ def get_db_connection():
         user=os.getenv("MYSQL_USER"),
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DB"),
-        collation='utf8mb4_general_ci'  # <--- ADD THIS LINE
+        collation='utf8mb4_general_ci'
     )
 
 # --- DATABASE SETUP (MYSQL) ---
@@ -150,7 +155,6 @@ def init_mysql_db():
         cursor = conn.cursor()
         
         # Announcements Table
-        # Note: Using LONGTEXT for content to handle large HTML blocks
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS announcements (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -169,6 +173,23 @@ def init_mysql_db():
                 title VARCHAR(255) NOT NULL,
                 category VARCHAR(255) NOT NULL,
                 content LONGTEXT NOT NULL
+            )
+        ''')
+
+        # Wiki Submissions Table (For Approval Queue)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS wiki_submissions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                slug VARCHAR(255),
+                title VARCHAR(255),
+                category VARCHAR(255),
+                content LONGTEXT,
+                author_id VARCHAR(50),
+                author_name VARCHAR(100),
+                submission_type VARCHAR(10), -- 'NEW' or 'EDIT'
+                status VARCHAR(20) DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                denial_reason TEXT DEFAULT NULL
             )
         ''')
         
@@ -190,7 +211,6 @@ def seed_wiki_db():
         if count == 0:
             print("Seeding Wiki Database...")
             for slug, data in INITIAL_WIKI_DATA.items():
-                # MySQL uses %s as placeholder, not ?
                 cursor.execute(
                     "INSERT INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)",
                     (slug, data['title'], data['category'], data['content'])
@@ -228,8 +248,10 @@ STAFF_GROUPS = [
     {"name": "Build Team", "roles": [{"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499233591791777", "title": "Senior Builder"}, {"id": "1207778275334553640", "title": "Builder"}]},
     {"name": "Modeling Team", "roles": [{"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1452499235332292801", "title": "Senior Modeler"}, {"id": "1452499236091592806", "title": "Modeler"}]},
     {"name": "Coordinator Team", "roles": [{"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535922331095051", "title": "Event Coordinator"}, {"id": "1392535907965341806", "title": "Social Coordinator"}]},
-    {"name": "Art & Story", "roles": [{"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535921487908945", "title": "Artist"}, {"id": "1452004927441342616", "title": "Storyteller"}]},
-    {"name": "Quality Assurance", "roles": [{"id": "1392535925606715533", "title": "Lead Tester"}, {"id": "1452499234720055316", "title": "Senior Tester"}, {"id": "1392535923203379260", "title": "Tester"}]},
+    {"name": "Story Team", "roles": [{"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1452004927441342616", "title": "Storyteller"}]},
+    {"name": "Art Team", "roles": [{"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1392535921487908945", "title": "Artist"}]},
+    {"name": "Wiki Team", "roles": [{"id": "1454631224592171099", "title": "Lead Wiki Editor"}, {"id": "1454631225309401269", "title": "Wiki Editor"}]},
+    {"name": "Tester Team", "roles": [{"id": "1392535925606715533", "title": "Lead Tester"}, {"id": "1452499234720055316", "title": "Senior Tester"}, {"id": "1392535923203379260", "title": "Tester"}]},
     {"name": "Moderation Team", "roles": [{"id": "1207778265008439467", "title": "Senior Moderator"}, {"id": "1207778265931055204", "title": "Moderator"}, {"id": "1207778266572918904", "title": "Helper"}]}
 ]
 
@@ -296,6 +318,53 @@ def check_is_storyteller(user_id):
     except: pass
     return False
 
+def check_is_lead_wiki(user_id):
+    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if response.status_code == 200:
+            if LEAD_WIKI_EDITOR_ID in response.json().get('roles', []): return True
+    except: pass
+    return False
+
+# --- HELPER: WIKI APPROVAL REQUEST ---
+def send_wiki_approval_request(submission_id, title, category, author_name, sub_type):
+    # Sends to the same leadership channel for now, or define a specific WIKI channel
+    channel_id = os.getenv("LEADERSHIP_CHANNEL_ID") 
+    if not channel_id: return
+
+    color = 15844367 # Gold/Yellow for Pending
+    
+    embed = {
+        "title": "📜 Wiki Approval Required",
+        "description": f"**{author_name}** has submitted a **{sub_type}** page.",
+        "color": color,
+        "fields": [
+            {"name": "Page Title", "value": title, "inline": True},
+            {"name": "Category", "value": category, "inline": True},
+            {"name": "Content Preview", "value": "Content hidden (too large). Approve to publish.", "inline": False}
+        ],
+        "footer": {"text": f"Submission ID: {submission_id} | Status: PENDING"}
+    }
+
+    components = [{
+        "type": 1,
+        "components": [
+            {
+                "type": 2, "style": 3, "label": "Approve & Publish", "emoji": {"name": "✅", "id": None},
+                "custom_id": f"wiki_approve_{submission_id}"
+            },
+            {
+                "type": 2, "style": 4, "label": "Deny", "emoji": {"name": "⛔", "id": None},
+                "custom_id": f"wiki_deny_{submission_id}"
+            }
+        ]
+    }]
+
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
+    requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
+
 # --- ROUTES ---
 
 @app.route('/')
@@ -360,6 +429,7 @@ def callback():
         user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {token_resp.json().get("access_token")}'})
         user_data = user_resp.json()
         
+        session.permanent = True # Activates the 2-hour timeout
         session['user'] = user_data
         session['is_admin'] = check_is_admin(user_data['id'])
         session['is_coord'] = check_is_coordinator(user_data['id'])
@@ -379,7 +449,11 @@ def logout():
 @app.route('/admin')
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
-    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story')):
+    
+    # Updated to include Lead Wiki check for dashboard access
+    is_wiki_lead = check_is_lead_wiki(session['user']['id'])
+    
+    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story') or is_wiki_lead):
         return render_template('base.html', content="<h1>Access Denied</h1>")
 
     conn = get_db_connection()
@@ -404,7 +478,8 @@ def admin():
     
     # 2. Fetch Wiki Pages
     wiki_pages = []
-    if session.get('is_admin') or session.get('is_story'):
+    # Admins, Story, and Wiki Leads see all pages
+    if session.get('is_admin') or session.get('is_story') or is_wiki_lead:
         cursor.execute('SELECT * FROM wiki ORDER BY category, title')
         wiki_pages = cursor.fetchall()
 
@@ -465,10 +540,15 @@ def admin_delete(id):
     conn.close()
     return redirect(url_for('admin'))
 
-# --- ADMIN ROUTES (WIKI) ---
+# --- ADMIN ROUTES (WIKI WITH APPROVAL LOGIC) ---
 @app.route('/admin/wiki/new', methods=['GET', 'POST'])
 def admin_wiki_new():
-    if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
+    # Only Admin, Story Lead, or Wiki Lead can create
+    if 'user' not in session: return "Unauthorized", 403
+    user_id = session['user']['id']
+    is_wiki_lead = check_is_lead_wiki(user_id)
+    
+    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
         return "Unauthorized", 403
 
     if request.method == 'POST':
@@ -476,18 +556,35 @@ def admin_wiki_new():
         title = request.form['title']
         category = request.form['category']
         content = request.form['content']
+        submission_type = "NEW"
+        username = session['user']['username']
         
+        # BYPASS CHECK: Admins and Leads bypass approval
+        is_bypass = (session.get('is_admin') or session.get('is_story') or is_wiki_lead)
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        try:
-            # MySQL syntax for replace
+        
+        if is_bypass:
+            try:
+                cursor.execute(
+                    "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
+                    (slug, title, category, content)
+                )
+                conn.commit()
+            except Exception as e:
+                print(f"DB Error: {e}")
+        else:
+            # Submit to Queue
             cursor.execute(
-                "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
-                (slug, title, category, content)
+                '''INSERT INTO wiki_submissions 
+                   (slug, title, category, content, author_id, author_name, submission_type) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+                (slug, title, category, content, user_id, username, submission_type)
             )
             conn.commit()
-        except Exception as e:
-            print(f"DB Error: {e}")
+            sub_id = cursor.lastrowid
+            send_wiki_approval_request(sub_id, title, category, username, submission_type)
         
         cursor.close()
         conn.close()
@@ -497,7 +594,11 @@ def admin_wiki_new():
 
 @app.route('/admin/wiki/edit/<slug>', methods=['GET', 'POST'])
 def admin_wiki_edit(slug):
-    if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
+    if 'user' not in session: return "Unauthorized", 403
+    user_id = session['user']['id']
+    is_wiki_lead = check_is_lead_wiki(user_id)
+
+    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
         return "Unauthorized", 403
 
     try:
@@ -508,12 +609,30 @@ def admin_wiki_edit(slug):
             title = request.form['title']
             category = request.form['category']
             content = request.form['content']
+            submission_type = "EDIT"
+            username = session['user']['username']
             
-            cursor.execute(
-                "UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", 
-                (title, category, content, slug)
-            )
-            conn.commit()
+            # BYPASS CHECK
+            is_bypass = (session.get('is_admin') or session.get('is_story') or is_wiki_lead)
+
+            if is_bypass:
+                cursor.execute(
+                    "UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", 
+                    (title, category, content, slug)
+                )
+                conn.commit()
+            else:
+                # Submit to Queue
+                cursor.execute(
+                    '''INSERT INTO wiki_submissions 
+                       (slug, title, category, content, author_id, author_name, submission_type) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+                    (slug, title, category, content, user_id, username, submission_type)
+                )
+                conn.commit()
+                sub_id = cursor.lastrowid
+                send_wiki_approval_request(sub_id, title, category, username, submission_type)
+
             cursor.close()
             conn.close()
             return redirect(url_for('admin'))
@@ -535,7 +654,12 @@ def admin_wiki_edit(slug):
 
 @app.route('/admin/wiki/delete/<slug>')
 def admin_wiki_delete(slug):
-    if 'user' not in session or not (session.get('is_admin') or session.get('is_story')):
+    # Only Admin, Story Lead, or Wiki Lead can delete
+    if 'user' not in session: return "Unauthorized", 403
+    user_id = session['user']['id']
+    is_wiki_lead = check_is_lead_wiki(user_id)
+    
+    if not (session.get('is_admin') or session.get('is_story') or is_wiki_lead):
         return "Unauthorized", 403
     
     conn = get_db_connection()
