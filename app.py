@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))
 
 # --- SESSION CONFIGURATION ---
-app.permanent_session_lifetime = timedelta(hours=2) # Sessions expire after 2 hours
+#app.permanent_session_lifetime = timedelta(hours=2) # Sessions expire after 2 hours
 
 # --- CONFIGURATION ---
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -325,6 +325,15 @@ def check_is_lead_wiki(user_id):
         response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
         if response.status_code == 200:
             if LEAD_WIKI_EDITOR_ID in response.json().get('roles', []): return True
+    except: pass
+    return False
+
+def check_is_wiki_editor(user_id):
+    headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+    try:
+        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if response.status_code == 200:
+            if WIKI_EDITOR_ID in response.json().get('roles', []): return True
     except: pass
     return False
 
