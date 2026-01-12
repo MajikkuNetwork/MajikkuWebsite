@@ -38,7 +38,8 @@ LEAD_COORDINATOR_ID = "1207778273791184927"
 
 # ID allowed to edit Wiki
 LEAD_STORYTELLER_ID = "1452004814375616765"
-LEAD_WIKI_EDITOR_ID = "1454631224592171099" # <--- Lead Wiki Editor
+LEAD_WIKI_EDITOR_ID = "1454631224592171099"
+WIKI_EDITOR_ID = "1454631225309401269" #Limited Access must be approved
 
 # --- OLD HARDCODED WIKI DATA (For seeding DB only) ---
 INITIAL_WIKI_DATA = {
@@ -445,15 +446,27 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# --- ADMIN ROUTES (ANNOUNCEMENTS) ---
 @app.route('/admin')
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
     
-    # Updated to include Lead Wiki check for dashboard access
-    is_wiki_lead = check_is_lead_wiki(session['user']['id'])
+    user_id = session['user']['id']
     
-    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story') or is_wiki_lead):
+    # Check roles
+    is_wiki_lead = check_is_lead_wiki(user_id)
+    
+    # We need a quick check for the standard editor too so they can view the page
+    is_wiki_editor = False
+    try:
+        # Re-using the logic from check_is_lead_wiki but for the editor ID
+        headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+        resp = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        if resp.status_code == 200 and WIKI_EDITOR_ID in resp.json().get('roles', []):
+            is_wiki_editor = True
+    except: pass
+
+    # ALLOW ACCESS IF: Admin, Coord, Story, Lead Wiki, OR Standard Wiki Editor
+    if not (session.get('is_admin') or session.get('is_coord') or session.get('is_story') or is_wiki_lead or is_wiki_editor):
         return render_template('base.html', content="<h1>Access Denied</h1>")
 
     conn = get_db_connection()
