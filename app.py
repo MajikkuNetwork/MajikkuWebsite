@@ -686,8 +686,9 @@ def report():
             is_anonymous=is_anon
         )
 
-        # Pass the report_id to the template
-        return render_template('report_success.html', user=session['user'], report_id=report_id)
+        # Redirect to the new GET route. 
+        # This clears the browser's "POST" history for this action.
+        return redirect(url_for('report_success', report_id=report_id))
     
     return render_template('report.html', user=session['user'])
 
@@ -773,6 +774,14 @@ def send_report_bot_message(report_id, report_type, source, reporter_name, targe
             print(response.text)
     except Exception as e:
         print(f"BOT API EXCEPTION: {e}")
+
+# --- NEW ROUTE: SUCCESS PAGE ---
+@app.route('/report/success/<int:report_id>')
+def report_success(report_id):
+    if 'user' not in session: return redirect(url_for('login'))
+    
+    # Render the success template we made earlier, passing the ID from the URL
+    return render_template('report_success.html', user=session['user'], report_id=report_id)
 
 if __name__ == '__main__':
     app.run(debug=True)

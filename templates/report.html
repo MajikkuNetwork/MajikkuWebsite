@@ -71,6 +71,29 @@
 </div>
 
 <script>
+    // ... your existing switchForm function ...
+
+    // Prevent Double-Submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var form = this;
+        
+        // 1. Check if the form is actually valid first
+        if (!form.checkValidity()) {
+            // If invalid, let the browser show the error bubbles
+            return;
+        }
+
+        // 2. If valid, Change button text and Disable it
+        var btn = form.querySelector('button[type="submit"]');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+        
+        // 3. Since the button is disabled, we must explicitly submit the form now?
+        // Actually, preventing default isn't needed if we don't preventDefault().
+        // But simply disabling the button on 'submit' event allows the request to fly.
+    });
+    
     function switchForm(type) {
         // 1. Update the hidden input
         document.getElementById('report_type').value = type;
