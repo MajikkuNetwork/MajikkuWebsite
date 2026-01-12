@@ -439,11 +439,15 @@ def callback():
         user_resp = requests.get(f'{API_ENDPOINT}/users/@me', headers={'Authorization': f'Bearer {token_resp.json().get("access_token")}'})
         user_data = user_resp.json()
         
-        session.permanent = True # Activates the 2-hour timeout
+        #session.permanent = True # Activates the 2-hour timeout
         session['user'] = user_data
         session['is_admin'] = check_is_admin(user_data['id'])
         session['is_coord'] = check_is_coordinator(user_data['id'])
         session['is_story'] = check_is_storyteller(user_data['id'])
+        
+        # --- ADD THESE LINES ---
+        session['is_wiki_lead'] = check_is_lead_wiki(user_data['id'])
+        session['is_wiki_editor'] = check_is_wiki_editor(user_data['id'])
         
     except Exception as e:
         return f"Login Error: {e}"
