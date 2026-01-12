@@ -48,9 +48,82 @@ INITIAL_WIKI_DATA = {
 }
 
 LEGAL_DATA = {
-    "tos": {"title": "Terms of Service", "content": "<p>Last Updated: 01/04/2026</p>"},
-    "privacy": {"title": "Privacy Policy", "content": "<p>Last Updated: 01/04/2026</p>"},
-    "refund": {"title": "Refund Policy", "content": "<p>All sales are final.</p>"}
+    "tos": {
+        "title": "Terms of Service",
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+            
+            <h3>1. Acceptance of Terms</h3>
+            <p>By accessing or using Majikku (the "Service"), including our game servers, Discord server, and website, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.</p>
+            
+            <h3>2. User Conduct</h3>
+            <p>You agree to follow all rules outlined in our Rules Document. Specifically, you agree <strong>NOT</strong> to:</p>
+            <ul>
+                <li>Use cheats, exploits, or third-party software to gain an unfair advantage.</li>
+                <li>Harass, threaten, or abuse other players or staff members.</li>
+                <li>Attempt to crash, lag, or disrupt the server operations.</li>
+            </ul>
+
+            <h3>3. Account Responsibility</h3>
+            <p>You are responsible for safeguarding the account you use to access the Service. You are responsible for any activities or actions under your account, whether you authorized them or not.</p>
+
+            <h3>4. Termination</h3>
+            <p>We may terminate or suspend your access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+            <p><strong>Ban Appeals:</strong> Appeals are processed at the sole discretion of the Senior Moderators and the Leadership team.</p>
+
+            <h3>5. Changes</h3>
+            <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time.</p>
+        """
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+
+            <h3>1. Introduction</h3>
+            <p>Welcome to Majikku ("we," "our," or "us"). We are committed to protecting your privacy. This policy explains what information we collect when you join our server, use our website, or interact with our services.</p>
+
+            <h3>2. Information We Collect</h3>
+            <p>To facilitate gameplay, moderation, and reward delivery, we collect and store the following specific technical identifiers:</p>
+            <ul>
+                <li><strong>Discord ID:</strong> Used for authentication on our website and linking your community profile.</li>
+                <li><strong>Game UUIDs (Hytale):</strong> Used to uniquely identify your game character in our database.</li>
+                <li><strong>In-Game Usernames:</strong> Used for display purposes and command execution.</li>
+            </ul>
+
+            <h3>3. How We Use Your Information</h3>
+            <p>We use this data strictly for backend server functionality, including but not limited to:</p>
+            <ul>
+                <li><strong>Account Linking:</strong> Connecting your Discord account to your in-game player data.</li>
+                <li><strong>Moderation:</strong> Tracking warnings, bans, mutes, and appeals (based on the LiteBans architecture).</li>
+                <li><strong>Rewards:</strong> Delivering in-game items or ranks based on purchases or events.</li>
+            </ul>
+
+            <h3>4. Data Sharing</h3>
+            <p>We do not sell, trade, or rent your personal identification information to others. We may share generic aggregated demographic information not linked to any personal identification information regarding visitors and users with our business partners and advertisers.</p>
+
+            <h3>5. Data Security</h3>
+            <p>We adopt appropriate data collection, storage, and processing practices and security measures to protect against unauthorized access to your personal information (specifically the Discord OAuth2 tokens and database entries).</p>
+        """
+    },
+    "refund": {
+        "title": "Refund Policy",
+        "content": """
+            <p><strong>Last Updated:</strong> 01/04/2026</p>
+
+            <h3>1. Digital Goods</h3>
+            <p>All items, ranks, and services purchased on the Majikku store are digital intangible goods.</p>
+
+            <h3>2. No Refunds</h3>
+            <p>Because our products are digital and delivered immediately upon payment execution, all sales are final. We do not offer refunds, returns, or exchanges once the transaction is complete and the digital goods have been delivered.</p>
+
+            <h3>3. Chargebacks</h3>
+            <p>Any attempt to chargeback or dispute a payment via PayPal, your bank, or other payment processors will result in an automatic and <strong>permanent ban</strong> from the Majikku network (including Game Servers, Discord, and Website). This ban allows no opportunity for appeal.</p>
+
+            <h3>4. Server Termination</h3>
+            <p>In the event that Majikku closes or ceases operation, no refunds will be issued for previously purchased ranks or items.</p>
+        """
+    }
 }
 
 # --- DATABASE CONNECTION ---
