@@ -165,9 +165,7 @@
             <a href="/legal/tos">Legal</a>
             
             {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin">Staff Panel</a>
-                </li>
+                    <a class="nav-link" href="/admin">Admin</a>
             {% endif %}
 
             {% if session.get('user') %}
