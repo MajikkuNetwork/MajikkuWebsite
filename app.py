@@ -275,10 +275,14 @@ def check_is_lead_wiki(uid): return check_role(uid, [LEAD_WIKI_EDITOR_ID])
 def check_is_wiki_editor(uid): return check_role(uid, [WIKI_EDITOR_ID])
 
 # --- DISCORD MESSAGING ---
-def send_wiki_approval_request(sub_id, title, category, author_name, sub_type):
-    """Sends Wiki Approval Embed to Leadership."""
+def send_wiki_approval_request(sub_id, title, category, author_name, sub_type, content):
+    """Sends Wiki Approval Embed to Leadership with a content preview."""
     channel_id = os.getenv("WIKI_APPROVAL_CHANNEL_ID") 
     if not channel_id: return
+
+    # Discord Field Value Limit is 1024 characters. 
+    # We truncate to ~950 to leave room for the code block syntax.
+    preview_content = (content[:950] + '... (Truncated)') if len(content) > 950 else content
 
     color = 15844367 # Gold
     embed = {
@@ -287,10 +291,13 @@ def send_wiki_approval_request(sub_id, title, category, author_name, sub_type):
         "color": color,
         "fields": [
             {"name": "Page Title", "value": title, "inline": True},
-            {"name": "Category", "value": category, "inline": True}
+            {"name": "Category", "value": category, "inline": True},
+            # NEW: Content Preview in a code block
+            {"name": "Content Preview", "value": f"```html\n{preview_content}\n```", "inline": False}
         ],
         "footer": {"text": f"Submission ID: {sub_id} | Status: PENDING"}
     }
+    
     components = [{"type": 1, "components": [
         {"type": 2, "style": 3, "label": "Approve & Publish", "emoji": {"name": "✅", "id": None}, "custom_id": f"wiki_approve_{sub_id}"},
         {"type": 2, "style": 4, "label": "Deny", "emoji": {"name": "⛔", "id": None}, "custom_id": f"wiki_deny_{sub_id}"}
@@ -299,7 +306,6 @@ def send_wiki_approval_request(sub_id, title, category, author_name, sub_type):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
     requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
-
 def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
     """Sends Report Embed to Discord."""
     if report_type == 'STAFF':
@@ -393,8 +399,6 @@ def callback():
         return f"Internal Login Error: {e}"
     
     return redirect(url_for('home'))
-    
-    return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():
@@ -406,7 +410,7 @@ def logout():
 def admin():
     if 'user' not in session: return redirect(url_for('login'))
     
-    # Check if user has ANY allowed role
+    # Check Access
     has_access = (
         session.get('is_admin') or 
         session.get('is_coord') or 
@@ -423,27 +427,39 @@ def admin():
     
     # 1. Fetch Announcements
     posts = []
-    if session.get('is_admin'):
-        cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
+    if session.get('is_admin') or session.get('is_coord') or session.get('is_story'):
+        if session.get('is_admin'):
+            cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
+        else:
+            allowed = []
+            if session.get('is_coord'): allowed.append("EVENT")
+            if session.get('is_story'): allowed.append("LORE")
+            if allowed:
+                fmt = ','.join(['%s'] * len(allowed))
+                cursor.execute(f"SELECT * FROM announcements WHERE category IN ({fmt}) ORDER BY id DESC", tuple(allowed))
         posts = cursor.fetchall()
-    else:
-        allowed = []
-        if session.get('is_coord'): allowed.append("EVENT")
-        if session.get('is_story'): allowed.append("LORE")
-        if allowed:
-            fmt = ','.join(['%s'] * len(allowed))
-            cursor.execute(f"SELECT * FROM announcements WHERE category IN ({fmt}) ORDER BY id DESC", tuple(allowed))
-            posts = cursor.fetchall()
     
-    # 2. Fetch Wiki Pages (Visible to Admins, Story, Wiki Teams)
+    # 2. Fetch Live Wiki Pages
     wiki_pages = []
     if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor'):
         cursor.execute('SELECT * FROM wiki ORDER BY category, title')
         wiki_pages = cursor.fetchall()
 
+    # 3. NEW: Fetch Pending Wiki Submissions (For Leads/Admins to review)
+    pending_submissions = []
+    # Only Admins, Story Leads, and Wiki Leads should see/approve pending items
+    if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'):
+        cursor.execute("SELECT * FROM wiki_submissions WHERE status='PENDING' ORDER BY created_at DESC")
+        pending_submissions = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    return render_template('admin.html', user=session.get('user'), announcements=posts, wiki_pages=wiki_pages)
+    
+    return render_template('admin.html', 
+                           user=session.get('user'), 
+                           announcements=posts, 
+                           wiki_pages=wiki_pages, 
+                           pending_submissions=pending_submissions)
 
 # --- ADMIN ACTIONS ---
 @app.route('/admin/post', methods=['POST'])
