@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, render_template, session, url_for, jsonify
+from flask import Flask, redirect, request, render_template, session, url_for, jsonify, send_from_directory
 import requests
 import os
 import time
@@ -717,6 +717,10 @@ def report():
 def report_success(report_id):
     if 'user' not in session: return redirect(url_for('login'))
     return render_template('report_success.html', user=session['user'], report_id=report_id)
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     app.run(debug=True)
