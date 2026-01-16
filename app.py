@@ -541,11 +541,16 @@ def admin_wiki_new():
 @app.route('/admin/wiki/edit/<slug>', methods=['GET', 'POST'])
 def admin_wiki_edit(slug):
     if 'user' not in session: return "Unauthorized", 403
+    
+    # Permission Check
     has_access = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor'))
     if not has_access: return "Unauthorized", 403
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
+    # Check if we are reviewing a specific pending submission
+    submission_id = request.args.get('submission_id')
 
     if request.method == 'POST':
         title = request.form['title']
@@ -557,9 +562,20 @@ def admin_wiki_edit(slug):
         is_bypass = (session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'))
 
         if is_bypass:
-            cursor.execute("UPDATE wiki SET title=%s, category=%s, content=%s WHERE slug=%s", (title, category, content, slug))
+            # ADMIN/LEAD ACTION: PUBLISH IMMEDIATELY
+            # We use REPLACE INTO to handle both "New" pages and "Edits" to existing ones.
+            cursor.execute(
+                "REPLACE INTO wiki (slug, title, category, content) VALUES (%s, %s, %s, %s)", 
+                (slug, title, category, content)
+            )
+            
+            # If this was a review of a pending submission, mark it as APPROVED now.
+            if submission_id:
+                cursor.execute("UPDATE wiki_submissions SET status='APPROVED' WHERE id=%s", (submission_id,))
+                
             conn.commit()
         else:
+            # EDITOR ACTION: SUBMIT EDIT REQUEST
             cursor.execute('''INSERT INTO wiki_submissions (slug, title, category, content, author_id, author_name, submission_type) VALUES (%s, %s, %s, %s, %s, %s, 'EDIT')''', (slug, title, category, content, user_id, username))
             conn.commit()
             sub_id = cursor.lastrowid
@@ -569,10 +585,26 @@ def admin_wiki_edit(slug):
         conn.close()
         return redirect(url_for('admin'))
 
-    cursor.execute("SELECT * FROM wiki WHERE slug = %s", (slug,))
-    page = cursor.fetchone()
+    # --- GET REQUEST (LOADING DATA) ---
+    page = None
+    
+    # 1. If reviewing a submission, try to load from submissions table first
+    if submission_id:
+        cursor.execute("SELECT * FROM wiki_submissions WHERE id = %s", (submission_id,))
+        page = cursor.fetchone()
+    
+    # 2. If no submission ID (or invalid), load from live wiki table
+    if not page:
+        cursor.execute("SELECT * FROM wiki WHERE slug = %s", (slug,))
+        page = cursor.fetchone()
+    
     cursor.close()
     conn.close()
+    
+    # 3. If still nothing, it's a 404 (unless we are creating new, but this is the edit route)
+    if not page:
+        return "Page or Submission not found", 404
+        
     return render_template('edit_wiki.html', page=page, user=session.get('user'))
 
 @app.route('/admin/wiki/delete/<slug>')
