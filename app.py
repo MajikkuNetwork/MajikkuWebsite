@@ -280,8 +280,7 @@ def send_wiki_approval_request(sub_id, title, category, author_name, sub_type, c
     channel_id = os.getenv("WIKI_APPROVAL_CHANNEL_ID") 
     if not channel_id: return
 
-    # Discord Field Value Limit is 1024 characters. 
-    # We truncate to ~950 to leave room for the code block syntax.
+    # Truncate content for preview
     preview_content = (content[:950] + '... (Truncated)') if len(content) > 950 else content
 
     color = 15844367 # Gold
@@ -292,53 +291,21 @@ def send_wiki_approval_request(sub_id, title, category, author_name, sub_type, c
         "fields": [
             {"name": "Page Title", "value": title, "inline": True},
             {"name": "Category", "value": category, "inline": True},
-            # NEW: Content Preview in a code block
             {"name": "Content Preview", "value": f"```html\n{preview_content}\n```", "inline": False}
         ],
         "footer": {"text": f"Submission ID: {sub_id} | Status: PENDING"}
     }
     
+    # NEW: 3 Buttons
     components = [{"type": 1, "components": [
+        # 1. Approve (Green)
         {"type": 2, "style": 3, "label": "Approve & Publish", "emoji": {"name": "✅", "id": None}, "custom_id": f"wiki_approve_{sub_id}"},
+        # 2. Approve & Edited (Blurple) - Indicates staff made changes
+        {"type": 2, "style": 1, "label": "Approved & Edited", "emoji": {"name": "📝", "id": None}, "custom_id": f"wiki_edit_approve_{sub_id}"},
+        # 3. Deny (Red)
         {"type": 2, "style": 4, "label": "Deny", "emoji": {"name": "⛔", "id": None}, "custom_id": f"wiki_deny_{sub_id}"}
     ]}]
     
-    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
-    requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
-def send_report_bot_message(report_id, report_type, source, reporter_name, target_name, server, reason, evidence, is_anonymous):
-    """Sends Report Embed to Discord."""
-    if report_type == 'STAFF':
-        channel_id = os.getenv("LEADERSHIP_CHANNEL_ID")
-        color = 10181046 
-        title_prefix = "🚨 STAFF REPORT"
-    else:
-        channel_id = os.getenv("REPORTS_CHANNEL_ID")
-        color = 16711680 
-        title_prefix = "⚠️ PLAYER REPORT"
-
-    if not channel_id: return
-
-    fields = [
-        {"name": "Reported User", "value": f"**{target_name}**", "inline": True},
-        {"name": "Server/Origin", "value": str(server), "inline": True},
-    ]
-    if is_anonymous:
-        fields.append({"name": "Reported By", "value": "||Anonymous User||", "inline": True})
-    else:
-        fields.append({"name": "Reported By", "value": str(reporter_name), "inline": True})
-
-    fields.append({"name": "Reason", "value": reason, "inline": False})
-    fields.append({"name": "Evidence", "value": evidence, "inline": False})
-
-    embed = {
-        "title": f"{title_prefix} #{report_id}",
-        "color": color,
-        "fields": fields,
-        "footer": {"text": f"Source: {source} | ID: {report_id} | Status: OPEN"}
-    }
-    components = [{"type": 1, "components": [{"type": 2, "style": 1, "label": "Claim", "emoji": {"name": "🔎", "id": None}, "custom_id": f"claim_report_{report_id}"}]}]
-
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {"Authorization": f"Bot {os.getenv('BOT_TOKEN')}", "Content-Type": "application/json"}
     requests.post(url, headers=headers, json={"embeds": [embed], "components": components})
