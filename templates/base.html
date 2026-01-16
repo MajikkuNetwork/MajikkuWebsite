@@ -1,95 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta property="og:site_name" content="Majikku Server">
+    <meta property="og:title" content="Majikku - Hytale Server">
+    <meta property="og:description" content="Join the adventure! Read our lore, check events, and apply for staff.">
+    <meta property="og:image" content="https://majikku.org/static/favicon.ico"> 
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="theme-color" content="#59A7D9"> 
+    {% block meta_tags %}{% endblock %}
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Majikku Network</title>
+    
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon.png') }}">
+
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
     <style>
-    /* --- DROPDOWN FIX --- */
-    select option {
-        background-color: #2b2d31;
-        color: #ffffff;
-    }
-    select option:checked, select option:hover {
-        background-color: #40444b;
-        color: #ffffff;
-    }
+        /* --- DROPDOWN FIX --- */
+        select option {
+            background-color: #2b2d31;
+            color: #ffffff;
+        }
+        select option:checked, select option:hover {
+            background-color: #40444b;
+            color: #ffffff;
+        }
 
-    /* --- RESPONSIVE NAVBAR FIX --- */
-    .navbar {
-        display: flex;
-        flex-wrap: wrap; /* Allows the navbar to fold if screen is small */
-        justify-content: space-between; /* Brand on left, links on right */
-        align-items: center;
-        padding: 15px 30px; /* More breathing room */
-        gap: 20px;
-    }
+        /* --- LAYOUT FIX (Pushes footer to bottom) --- */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .content-wrapper {
+            flex: 1; 
+        }
 
-    .nav-brand {
-        font-family: 'Cinzel', serif; 
-        font-size: 1.6rem; 
-        color: white;
-        white-space: nowrap; /* Keeps name on one line */
-    }
-
-    .nav-links {
-        display: flex;
-        flex-wrap: wrap; /* Allows links to stack cleanly */
-        gap: 15px; /* Consistent space between links */
-        align-items: center;
-        justify-content: center;
-    }
-
-    .nav-links a {
-        text-decoration: none;
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 500;
-        transition: color 0.2s;
-        white-space: nowrap; /* Prevents text breaking mid-word */
-    }
-    
-    .nav-links a:hover {
-        color: white;
-    }
-
-    /* Special Button Styling */
-    .nav-btn-admin {
-        color: var(--primary) !important; 
-        border: 1px solid var(--primary); 
-        padding: 6px 14px; 
-        border-radius: 6px;
-    }
-    
-    .nav-btn-logout {
-        border: 1px solid var(--secondary); 
-        padding: 6px 14px; 
-        border-radius: 6px;
-    }
-
-    .nav-highlight {
-        color: #ffcc00 !important;
-    }
-
-    /* Mobile/Tablet Adjustment */
-    @media (max-width: 1200px) {
+        /* --- NAVBAR STYLES --- */
         .navbar {
-            flex-direction: column; /* Stack logo above links */
-            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            gap: 20px;
+        }
+        .nav-brand {
+            font-family: 'Cinzel', serif; 
+            font-size: 1.6rem; 
+            color: white;
+            white-space: nowrap;
         }
         .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
             justify-content: center;
         }
-    }
-    </style>
-    
-    <style>
-        /* Custom Majikku Submit Button */
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .nav-links a:hover { color: white; }
+        .nav-btn-admin {
+            color: var(--primary) !important; 
+            border: 1px solid var(--primary); 
+            padding: 6px 14px; 
+            border-radius: 6px;
+        }
+        .nav-btn-logout {
+            border: 1px solid var(--secondary); 
+            padding: 6px 14px; 
+            border-radius: 6px;
+        }
+        .nav-highlight { color: #ffcc00 !important; }
+
+        @media (max-width: 1200px) {
+            .navbar { flex-direction: column; text-align: center; }
+            .nav-links { justify-content: center; }
+        }
+
+        /* --- FOOTER STYLES (Updated) --- */
+        .site-footer {
+            background-color: #1a1c20;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 40px 20px;
+            margin-top: 60px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .footer-links { margin-bottom: 20px; }
+        
+        /* Main Links (Staff, Report, Socials) */
+        .footer-link-main {
+            color: #ffffff;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .footer-link-main:hover { color: var(--accent, #00b4db); }
+
+        /* Legal Links (TOS, Privacy, Refund) */
+        .footer-legal { margin-bottom: 25px; }
+        .footer-link-legal {
+            color: #888;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .footer-link-legal:hover { color: #fff; }
+        .footer-divider { color: #444; font-size: 0.8rem; }
+
+        /* Copyright */
+        .footer-copy {
+            color: #555;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        /* --- BUTTON STYLES --- */
         .btn-majikku {
             background: linear-gradient(135deg, #00b4db, #0083b0);
             color: #ffffff;
@@ -111,33 +155,7 @@
             box-shadow: 0 6px 20px rgba(0, 210, 255, 0.6);
             transform: translateY(-2px);
         }
-
-        /* Toggle Buttons */
-        .btn-neon-toggle {
-            background: transparent;
-            border: 1px solid;
-            padding: 10px 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            border-radius: 6px;
-        }
-        .btn-neon-red { border-color: #ff4b4b; color: #ff4b4b; }
-        .btn-neon-red:hover, .btn-neon-red.active {
-            background-color: #ff4b4b; color: #ffffff;
-            box-shadow: 0 0 20px rgba(255, 75, 75, 0.6);
-            transform: translateY(-2px);
-        }
-        .btn-neon-gold { border-color: #ffd700; color: #ffd700; }
-        .btn-neon-gold:hover, .btn-neon-gold.active {
-            background-color: #ffd700; color: #000000;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-            transform: translateY(-2px);
-        }
     </style>
-
 </head>
 <body>
 
@@ -147,23 +165,17 @@
             <a href="/">Home</a>
             <a href="/wiki">Wiki</a>
             <a href="/events">Events</a>
-            <a href="/socials">Socials</a>
             <a href="/rules">Rules</a>
-            <a href="/staff">Staff</a>
             
             <a href="/apply">Applications</a>
             <a href="/appeal">Appeals</a>
-            <a href="/report">Report</a> 
-            <a href="https://store.majikku.org" target="_blank" class="nav-highlight">Store</a>
             <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" class="nav-highlight">Discord</a>
-            <a href="/legal/tos">Legal</a>
 
             {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}
-                <li class="nav-item">
+                <li class="nav-item" style="list-style: none;">
                     <a href="/admin" class="nav-btn-admin">Admin</a>
                 </li>
             {% endif %}
-
 
             {% if session.get('user') %}
                 <a href="/logout" class="nav-btn-logout">Logout</a>
@@ -173,9 +185,34 @@
         </div>
     </nav>
 
-    <div class="container" style="margin-top: 40px;">
+    <div class="content-wrapper container">
         {% block content %}{% endblock %}
     </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            
+            <div class="footer-links">
+                <a href="/staff" class="footer-link-main">Staff Team</a>
+                <a href="/report" class="footer-link-main">Report Incident</a>
+                <a href="/socials" class="footer-link-main">Social Media</a>
+            </div>
+
+            <div class="footer-legal">
+                <a href="/legal/tos" class="footer-link-legal">Terms of Service</a>
+                <span class="footer-divider">|</span>
+                <a href="/legal/privacy" class="footer-link-legal">Privacy Policy</a>
+                <span class="footer-divider">|</span>
+                <a href="/legal/refund" class="footer-link-legal">Refund Policy</a>
+            </div>
+
+            <div class="footer-copy">
+                &copy; 2026 Majikku Network. All Rights Reserved.<br>
+                We are not affiliated with Hypixel Studios or any real-world brands.
+            </div>
+
+        </div>
+    </footer>
 
 </body>
 </html>
