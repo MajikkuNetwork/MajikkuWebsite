@@ -530,7 +530,7 @@ def admin_wiki_new():
             cursor.execute('''INSERT INTO wiki_submissions (slug, title, category, content, author_id, author_name, submission_type) VALUES (%s, %s, %s, %s, %s, %s, 'NEW')''', (slug, title, category, content, user_id, username))
             conn.commit()
             sub_id = cursor.lastrowid
-            send_wiki_approval_request(sub_id, title, category, username, "NEW")
+            send_wiki_approval_request(sub_id, title, category, username, "NEW", content)
         
         cursor.close()
         conn.close()
@@ -563,7 +563,7 @@ def admin_wiki_edit(slug):
             cursor.execute('''INSERT INTO wiki_submissions (slug, title, category, content, author_id, author_name, submission_type) VALUES (%s, %s, %s, %s, %s, %s, 'EDIT')''', (slug, title, category, content, user_id, username))
             conn.commit()
             sub_id = cursor.lastrowid
-            send_wiki_approval_request(sub_id, title, category, username, "EDIT")
+            send_wiki_approval_request(sub_id, title, category, username, "EDIT", content)
 
         cursor.close()
         conn.close()
