@@ -687,52 +687,109 @@ def submit_application():
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
+    # --- HELPERS ---
     def clean(val):
         if val is None: return "N/A"
         s = str(val).strip()
         if s == "": return "N/A"
         return s
 
+    # 2. Prepare Data
     user_info = session.get('user', {})
     discord_username = user_info.get('username', 'Unknown User')
     discord_id = user_info.get('id', 'Unknown ID')
     team_name = clean(data.get('team', 'General'))
 
-    # 2. Build Base Embed
-    embed = {
+    # 3. LOGIC: Dynamic Embed Builder
+    embeds_list = []
+    
+    # Initialize the first embed
+    current_embed = {
         "title": f"📝 New Application: {team_name}",
         "color": 5763719,
-        "fields": [
-            {"name": "Discord User", "value": f"{discord_username} (<@{discord_id}>)", "inline": True},
-            {"name": "Hytale Username", "value": clean(data.get('hytale_name')), "inline": True},
-            {"name": "Age", "value": clean(data.get('age')), "inline": True},
-            {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
-            {"name": "Availability", "value": clean(data.get('availability')), "inline": True},
-            {"name": "Languages", "value": clean(data.get('languages')), "inline": False},
-        ],
-        "footer": {"text": "Majikku Staff Application System"}
+        "fields": [],
+        "footer": {"text": "Majikku Staff Application System (Page 1)"}
     }
+    
+    # Trackers for limits
+    # Title + Footer text counts towards the 6000 limit
+    current_char_count = len(current_embed['title']) + len(current_embed['footer']['text'])
+    
+    def finalize_current_embed():
+        """Saves current embed to list and starts a fresh one"""
+        nonlocal current_embed, current_char_count
+        embeds_list.append(current_embed)
+        current_embed = {
+            "color": 5763719,
+            "fields": [],
+            "footer": {"text": f"Majikku Staff Application System (Page {len(embeds_list) + 1})"}
+        }
+        current_char_count = len(current_embed['footer']['text'])
 
-    # 3. Add Answers
+    def add_field(name, value, inline=False):
+        """Safely adds a field, creating a new embed if limits are reached"""
+        nonlocal current_char_count
+        
+        # Discord Limits: Name=256, Value=1024. 
+        # We also need to check the Total Embed Limit (6000) and Field Count (25)
+        
+        # 1. Handle Value too long (Split into chunks)
+        val_str = str(value)
+        while len(val_str) > 1024:
+            # Take first 1024 chars
+            chunk = val_str[:1024]
+            add_field(name, chunk, False)
+            # Remove processed chunk
+            val_str = val_str[1024:]
+            # Change name for continuation
+            name = "Continued..."
+        
+        # 2. Check limits for the remaining chunk
+        name_len = len(name)
+        val_len = len(val_str)
+        
+        # If adding this field exceeds 6000 chars OR exceeds 25 fields
+        if (current_char_count + name_len + val_len > 5900) or (len(current_embed['fields']) >= 25):
+            finalize_current_embed()
+        
+        # 3. Add the field
+        current_embed['fields'].append({
+            "name": name,
+            "value": val_str,
+            "inline": inline
+        })
+        current_char_count += (name_len + val_len)
+
+    # --- ADDING CONTENT ---
+
+    # A. Add Header Info (Standard Fields)
+    add_field("Discord User", f"{discord_username} (<@{discord_id}>)", True)
+    add_field("Hytale Username", clean(data.get('hytale_name')), True)
+    add_field("Age", clean(data.get('age')), True)
+    add_field("Timezone", clean(data.get('timezone')), True)
+    add_field("Availability", clean(data.get('availability')), True)
+    add_field("Languages", clean(data.get('languages')), False)
+
+    # B. Add Q&A Loop
     answers = data.get('answers', {})
     if isinstance(answers, dict): 
         for question, answer in answers.items():
             if not question or str(question).strip() == "": continue
             
-            q_clean = str(question)[:256]
-            a_clean = clean(answer)
-            if len(a_clean) > 1024: a_clean = a_clean[:1021] + "..."
+            # This function automatically handles splits and new pages
+            add_field(str(question)[:256], clean(answer), False)
 
-            embed['fields'].append({
-                "name": q_clean,
-                "value": a_clean,
-                "inline": False
-            })
+    # Finalize the last embed
+    embeds_list.append(current_embed)
 
-    # 4. Construct Payload (FIXED FOR FORUM CHANNELS)
+    # 4. Construct Payload
+    # Discord allows up to 10 embeds per message.
+    if len(embeds_list) > 10:
+        return jsonify({'success': False, 'error': 'Application is too massive (Over 10 pages). Please shorten it.'}), 400
+
     payload = {
-        "thread_name": f"App: {discord_username} - {team_name}", # REQUIRED for Forums
-        "embeds": [embed]
+        "thread_name": f"App: {discord_username} - {team_name}", 
+        "embeds": embeds_list
     }
 
     # 5. Send
