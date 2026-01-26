@@ -685,7 +685,7 @@ def submit_application():
     
     # 2. Construct Discord Embed
     # Make sure APPLICATIONS_WEBHOOK_URL is in your .env file
-    webhook_url = os.getenv("APPLICATIONS_WEBHOOK_URL") 
+    webhook_url = DISCORD_WEBHOOK_URL
     if not webhook_url:
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'})
