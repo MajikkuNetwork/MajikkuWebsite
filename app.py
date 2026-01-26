@@ -678,12 +678,53 @@ def apply():
 def submit_application():
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
-    # 1. SERVER-SIDE CHECK
-    # Even if they hack the HTML button, this stops them here.
-    player_data = get_hytale_profile(session['user']['id'])
+    # REMOVED: The check for player_data / linking
     
-    if not player_data or not player_data.get('hytale_uuid'):
-        return jsonify({'success': False, 'error': 'You must link your Hytale account in-game before applying.'})
+    # 1. Get Data from JavaScript
+    data = request.json
+    
+    # 2. Construct Discord Embed
+    # Make sure APPLICATIONS_WEBHOOK_URL is in your .env file
+    webhook_url = os.getenv("APPLICATIONS_WEBHOOK_URL") 
+    if not webhook_url:
+        print("Error: No Application Webhook URL found.")
+        return jsonify({'success': False, 'error': 'Server configuration error.'})
+
+    embed = {
+        "title": f"📝 New Application: {data.get('team')}",
+        "color": 5763719, # Teal/Greenish
+        "fields": [
+            {"name": "Discord User", "value": f"{session['user']['username']} (<@{session['user']['id']}>)", "inline": True},
+            # Now uses the manually entered name from the form
+            {"name": "Hytale Username", "value": data.get('hytale_name', 'Not Provided'), "inline": True},
+            {"name": "Age", "value": data.get('age', 'N/A'), "inline": True},
+            {"name": "Timezone", "value": data.get('timezone', 'N/A'), "inline": True},
+            {"name": "Availability", "value": data.get('availability', 'N/A'), "inline": True},
+            {"name": "Languages", "value": data.get('languages', 'N/A'), "inline": False},
+        ],
+        "footer": {"text": "Majikku Staff Application System"}
+    }
+
+    # Add Questions and Answers
+    answers = data.get('answers', {})
+    for question, answer in answers.items():
+        # Discord fields have a 1024 char limit
+        safe_answer = (answer[:1020] + '...') if len(answer) > 1024 else answer
+        if safe_answer.strip(): # Only add if not empty
+            embed['fields'].append({
+                "name": question,
+                "value": safe_answer,
+                "inline": False
+            })
+
+    # 3. Send to Discord
+    try:
+        payload = {"embeds": [embed]}
+        requests.post(webhook_url, json=payload)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error sending application: {e}")
+        return jsonify({'success': False, 'error': 'Failed to send to Discord.'})
 
 @app.route('/appeal')
 def appeal():

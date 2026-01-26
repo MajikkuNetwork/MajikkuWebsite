@@ -79,21 +79,9 @@
         </div>
 
         <div class="form-group">
-            <label>What is your Hytale UUID?</label>
-            <input type="text" value="{{ player['hytale_uuid'] if player else '' }}" class="read-only" readonly>
-            
-            {% if player and player['hytale_uuid'] %}
-                <div class="desc-text" style="color: #00ff00; font-weight: bold; margin-top: 5px;">
-                    ✓ Account Linked (UUID Found)
-                </div>
-            {% else %}
-                <div class="desc-text" style="color: #ff4444; font-weight: bold; margin-top: 5px;">
-                    X Account Not Linked
-                </div>
-                <div class="desc-text" style="color: #ff4444; margin-top: 2px;">
-                    You cannot submit an application until you link your account. Please join <strong>play.majikku.net</strong> and type <code>/link</code>.
-                </div>
-            {% endif %}
+            <label>What is your Hytale Username?</label>
+            <input type="text" id="hytale_name" placeholder="Enter your expected in-game username" required>
+            <div class="desc-text">Since the server is not yet live, please enter the name you plan to use.</div>
         </div>
 
         <div style="display: flex; gap: 20px;">
