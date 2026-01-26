@@ -679,45 +679,68 @@ def submit_application():
     if 'user' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # 1. Get Data from JavaScript
+    # 1. Get Data
     data = request.json
-    
-    # 2. Construct Discord Webhook URL
-    # Ensure this matches the variable name in your .env file
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL") 
     
     if not webhook_url:
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # 3. Construct Discord Embed
+    # HELPER: Discord rejects empty field values (""). This fixes that.
+    def clean(val):
+        if not val or str(val).strip() == "":
+            return "N/A"
+        return str(val)
+
+    # 2. Build Base Embed (General Info)
     embed = {
-        "title": f"📝 New Application: {data.get('team')}",
-        "color": 5763719, # Teal/Greenish
+        "title": f"📝 New Application: {data.get('team', 'Unknown Team')}",
+        "color": 5763719, # Teal
         "fields": [
             {"name": "Discord User", "value": f"{session['user']['username']} (<@{session['user']['id']}>)", "inline": True},
-            {"name": "Hytale Username", "value": data.get('hytale_name', 'Not Provided'), "inline": True},
-            {"name": "Age", "value": str(data.get('age', 'N/A')), "inline": True}, # Cast to string just in case
-            {"name": "Timezone", "value": data.get('timezone', 'N/A'), "inline": True},
-            {"name": "Availability", "value": data.get('availability', 'N/A'), "inline": True},
-            {"name": "Languages", "value": data.get('languages', 'N/A'), "inline": False},
+            {"name": "Hytale Username", "value": clean(data.get('hytale_name')), "inline": True},
+            {"name": "Age", "value": clean(data.get('age')), "inline": True},
+            {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
+            {"name": "Availability", "value": clean(data.get('availability')), "inline": True},
+            {"name": "Languages", "value": clean(data.get('languages')), "inline": False},
         ],
         "footer": {"text": "Majikku Staff Application System"}
     }
 
-    # --- MISSING PART ADDED BELOW ---
+    # 3. Add the Actual Application Answers
+    # The JS sends these in an 'answers' object. We need to loop through them.
+    answers = data.get('answers', {})
+    
+    for question, answer in answers.items():
+        # Discord has a 1024 character limit per field value.
+        ans_str = clean(answer)
+        if len(ans_str) > 1024:
+            ans_str = ans_str[:1021] + "..."
+            
+        embed['fields'].append({
+            "name": question[:256], # Limit question title length
+            "value": ans_str,
+            "inline": False
+        })
+
+    # Safety Check: Discord allows max 25 fields per embed
+    if len(embed['fields']) > 25:
+        return jsonify({'success': False, 'error': 'Application too long (Max 25 questions allowed).'}), 400
 
     # 4. Send to Discord
-    payload = {"embeds": [embed]}
-    
     try:
-        response = requests.post(webhook_url, json=payload)
-        response.raise_for_status() # Raises error if Discord returns a 4xx or 5xx code
+        response = requests.post(webhook_url, json={"embeds": [embed]})
+        
+        # If Discord returns 400 (Bad Request), print the details to console for debugging
+        if response.status_code == 400:
+            print(f"Discord API Error: {response.text}")
+            
+        response.raise_for_status() 
     except requests.exceptions.RequestException as e:
         print(f"Error sending to Discord: {e}")
         return jsonify({'success': False, 'error': 'Failed to send application.'}), 500
 
-    # 5. Return Success to Frontend
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
 
 @app.route('/appeal')
