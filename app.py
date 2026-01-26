@@ -679,26 +679,27 @@ def submit_application():
     if 'user' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # 1. Get Data
-    data = request.json
+    # 1. Get Data safely
+    data = request.get_json(silent=True) or {} # silent=True prevents 400 if body is empty
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL") 
     
     if not webhook_url:
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # HELPER: Discord rejects empty field values (""). This fixes that.
+    # HELPER: Aggressive cleaner
     def clean(val):
-        if not val or str(val).strip() == "":
-            return "N/A"
-        return str(val)
+        if val is None: return "N/A"
+        s = str(val).strip()
+        if s == "": return "N/A"
+        return s
 
-    # 2. Build Base Embed (General Info)
+    # 2. Build Base Embed
     embed = {
-        "title": f"📝 New Application: {data.get('team', 'Unknown Team')}",
-        "color": 5763719, # Teal
+        "title": f"📝 New Application: {clean(data.get('team'))}",
+        "color": 5763719,
         "fields": [
-            {"name": "Discord User", "value": f"{session['user']['username']} (<@{session['user']['id']}>)", "inline": True},
+            {"name": "Discord User", "value": f"{session.get('user', {}).get('username', 'Unknown')} (<@{session.get('user', {}).get('id', 'Unknown')}>)", "inline": True},
             {"name": "Hytale Username", "value": clean(data.get('hytale_name')), "inline": True},
             {"name": "Age", "value": clean(data.get('age')), "inline": True},
             {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
@@ -708,37 +709,40 @@ def submit_application():
         "footer": {"text": "Majikku Staff Application System"}
     }
 
-    # 3. Add the Actual Application Answers
-    # The JS sends these in an 'answers' object. We need to loop through them.
+    # 3. Add Answers Loop (With Safety Checks)
     answers = data.get('answers', {})
-    
-    for question, answer in answers.items():
-        # Discord has a 1024 character limit per field value.
-        ans_str = clean(answer)
-        if len(ans_str) > 1024:
-            ans_str = ans_str[:1021] + "..."
+    if isinstance(answers, dict): # Ensure answers is actually a dictionary
+        for question, answer in answers.items():
+            # Skip if question name is suspiciously empty
+            if not question or str(question).strip() == "":
+                continue
+
+            q_clean = str(question)[:256] # Max title length
+            a_clean = clean(answer)
             
-        embed['fields'].append({
-            "name": question[:256], # Limit question title length
-            "value": ans_str,
-            "inline": False
-        })
+            # Truncate value to 1024 chars (Discord API Limit)
+            if len(a_clean) > 1024:
+                a_clean = a_clean[:1021] + "..."
 
-    # Safety Check: Discord allows max 25 fields per embed
-    if len(embed['fields']) > 25:
-        return jsonify({'success': False, 'error': 'Application too long (Max 25 questions allowed).'}), 400
+            embed['fields'].append({
+                "name": q_clean,
+                "value": a_clean,
+                "inline": False
+            })
 
-    # 4. Send to Discord
+    # 4. Debug & Send
     try:
+        # PRINT THE PAYLOAD TO CONSOLE FOR DEBUGGING
+        # print(f"Sending payload: {embed}") 
+        
         response = requests.post(webhook_url, json={"embeds": [embed]})
         
-        # If Discord returns 400 (Bad Request), print the details to console for debugging
-        if response.status_code == 400:
-            print(f"Discord API Error: {response.text}")
+        if response.status_code != 204: # 204 is success for Webhooks
+            print(f"⚠️ Discord Error [{response.status_code}]: {response.text}")
             
         response.raise_for_status() 
     except requests.exceptions.RequestException as e:
-        print(f"Error sending to Discord: {e}")
+        print(f"❌ Connection Error: {e}")
         return jsonify({'success': False, 'error': 'Failed to send application.'}), 500
 
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
