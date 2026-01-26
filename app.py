@@ -687,21 +687,20 @@ def submit_application():
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # HELPER: Ensure values are never empty (Discord rejects empty strings)
     def clean(val):
         if val is None: return "N/A"
         s = str(val).strip()
         if s == "": return "N/A"
         return s
 
-    # 2. Get User Info Safely
     user_info = session.get('user', {})
     discord_username = user_info.get('username', 'Unknown User')
     discord_id = user_info.get('id', 'Unknown ID')
+    team_name = clean(data.get('team', 'General'))
 
-    # 3. Build Base Embed
+    # 2. Build Base Embed
     embed = {
-        "title": f"📝 New Application: {clean(data.get('team'))}",
+        "title": f"📝 New Application: {team_name}",
         "color": 5763719,
         "fields": [
             {"name": "Discord User", "value": f"{discord_username} (<@{discord_id}>)", "inline": True},
@@ -714,20 +713,15 @@ def submit_application():
         "footer": {"text": "Majikku Staff Application System"}
     }
 
-    # 4. Add Answers Loop (Strict Filtering)
+    # 3. Add Answers
     answers = data.get('answers', {})
     if isinstance(answers, dict): 
         for question, answer in answers.items():
-            # CRITICAL FIX: Skip if the Question Title is empty (Causes Discord 400 Error)
-            if not question or str(question).strip() == "":
-                continue
-
-            q_clean = str(question)[:256] # Max title length
-            a_clean = clean(answer)
+            if not question or str(question).strip() == "": continue
             
-            # Truncate value to 1024 chars (Discord API Limit)
-            if len(a_clean) > 1024:
-                a_clean = a_clean[:1021] + "..."
+            q_clean = str(question)[:256]
+            a_clean = clean(answer)
+            if len(a_clean) > 1024: a_clean = a_clean[:1021] + "..."
 
             embed['fields'].append({
                 "name": q_clean,
@@ -735,19 +729,21 @@ def submit_application():
                 "inline": False
             })
 
-    # 5. Send to Discord with Detailed Debugging
-    try:
-        # Debug: Print the payload to console so you can inspect it
-        # print(f"DEBUG PAYLOAD: {embed}") 
+    # 4. Construct Payload (FIXED FOR FORUM CHANNELS)
+    payload = {
+        "username": "Application Bot",
+        "avatar_url": "https://i.imgur.com/AfFp7pu.png",
+        "thread_name": f"App: {discord_username} - {team_name}", # REQUIRED for Forums
+        "embeds": [embed]
+    }
 
-        response = requests.post(webhook_url, json={"embeds": [embed]})
+    # 5. Send
+    try:
+        response = requests.post(webhook_url, json=payload)
         
-        # If Discord says NO (400/401/404), return the specific reason
         if not response.ok:
-            error_msg = response.text
-            print(f"⚠️ Discord API Error [{response.status_code}]: {error_msg}")
-            # Send the Discord error message back to the frontend for easy reading
-            return jsonify({'success': False, 'error': f"Discord Error {response.status_code}: {error_msg}"}), response.status_code
+            print(f"⚠️ Discord API Error [{response.status_code}]: {response.text}")
+            return jsonify({'success': False, 'error': f"Discord Error: {response.text}"}), response.status_code
             
         response.raise_for_status() 
     except requests.exceptions.RequestException as e:
