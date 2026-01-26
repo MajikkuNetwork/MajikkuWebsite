@@ -681,129 +681,118 @@ def submit_application():
     
     # 1. Get Data Safely
     data = request.get_json(silent=True) or {}
+    user = session['user']
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL") 
     
     if not webhook_url:
         print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # --- HELPERS ---
+    # HELPER: Clean data to ensure no crashes
     def clean(val):
         if val is None: return "N/A"
         s = str(val).strip()
         if s == "": return "N/A"
         return s
 
-    # 2. Prepare Data
-    user_info = session.get('user', {})
-    discord_username = user_info.get('username', 'Unknown User')
-    discord_id = user_info.get('id', 'Unknown ID')
+    # 2. Prep Basic Info
     team_name = clean(data.get('team', 'General'))
-
-    # 3. LOGIC: Dynamic Embed Builder
-    embeds_list = []
+    discord_username = user.get('username', 'Unknown')
+    discord_id = user.get('id', 'Unknown')
     
-    # Initialize the first embed
-    current_embed = {
+    avatar_url = None
+    if user.get("avatar"):
+        avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+
+    # --- STEP 3: CREATE THE THREAD ---
+    # We send JUST the header info first. This guarantees the thread is created.
+    
+    header_embed = {
         "title": f"📝 New Application: {team_name}",
-        "color": 5763719,
-        "fields": [],
-        "footer": {"text": "Majikku Staff Application System (Page 1)"}
-    }
-    
-    # Trackers for limits
-    # Title + Footer text counts towards the 6000 limit
-    current_char_count = len(current_embed['title']) + len(current_embed['footer']['text'])
-    
-    def finalize_current_embed():
-        """Saves current embed to list and starts a fresh one"""
-        nonlocal current_embed, current_char_count
-        embeds_list.append(current_embed)
-        current_embed = {
-            "color": 5763719,
-            "fields": [],
-            "footer": {"text": f"Majikku Staff Application System (Page {len(embeds_list) + 1})"}
-        }
-        current_char_count = len(current_embed['footer']['text'])
-
-    def add_field(name, value, inline=False):
-        """Safely adds a field, creating a new embed if limits are reached"""
-        nonlocal current_char_count
-        
-        # Discord Limits: Name=256, Value=1024. 
-        # We also need to check the Total Embed Limit (6000) and Field Count (25)
-        
-        # 1. Handle Value too long (Split into chunks)
-        val_str = str(value)
-        while len(val_str) > 1024:
-            # Take first 1024 chars
-            chunk = val_str[:1024]
-            add_field(name, chunk, False)
-            # Remove processed chunk
-            val_str = val_str[1024:]
-            # Change name for continuation
-            name = "Continued..."
-        
-        # 2. Check limits for the remaining chunk
-        name_len = len(name)
-        val_len = len(val_str)
-        
-        # If adding this field exceeds 6000 chars OR exceeds 25 fields
-        if (current_char_count + name_len + val_len > 5900) or (len(current_embed['fields']) >= 25):
-            finalize_current_embed()
-        
-        # 3. Add the field
-        current_embed['fields'].append({
-            "name": name,
-            "value": val_str,
-            "inline": inline
-        })
-        current_char_count += (name_len + val_len)
-
-    # --- ADDING CONTENT ---
-
-    # A. Add Header Info (Standard Fields)
-    add_field("Discord User", f"{discord_username} (<@{discord_id}>)", True)
-    add_field("Hytale Username", clean(data.get('hytale_name')), True)
-    add_field("Age", clean(data.get('age')), True)
-    add_field("Timezone", clean(data.get('timezone')), True)
-    add_field("Availability", clean(data.get('availability')), True)
-    add_field("Languages", clean(data.get('languages')), False)
-
-    # B. Add Q&A Loop
-    answers = data.get('answers', {})
-    if isinstance(answers, dict): 
-        for question, answer in answers.items():
-            if not question or str(question).strip() == "": continue
-            
-            # This function automatically handles splits and new pages
-            add_field(str(question)[:256], clean(answer), False)
-
-    # Finalize the last embed
-    embeds_list.append(current_embed)
-
-    # 4. Construct Payload
-    # Discord allows up to 10 embeds per message.
-    if len(embeds_list) > 10:
-        return jsonify({'success': False, 'error': 'Application is too massive (Over 10 pages). Please shorten it.'}), 400
-
-    payload = {
-        "thread_name": f"App: {discord_username} - {team_name}", 
-        "embeds": embeds_list
+        "color": 10182117, # Green-ish (Matches your screenshot)
+        "thumbnail": {"url": avatar_url} if avatar_url else {},
+        "fields": [
+            {"name": "Discord User", "value": f"<@{discord_id}> ({discord_username})", "inline": False},
+            {"name": "Hytale Name", "value": clean(data.get('hytale_name')), "inline": True},
+            {"name": "Age", "value": clean(data.get('age')), "inline": True},
+            {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
+            {"name": "Availability", "value": clean(data.get('availability')), "inline": True},
+            {"name": "Languages", "value": clean(data.get('languages')), "inline": False},
+        ],
+        "footer": {"text": "Majikku Network Application System"}
     }
 
-    # 5. Send
+    # IMPORTANT: ?wait=true tells Discord to return the message data (so we get the Thread ID)
+    thread_start_url = f"{webhook_url}?wait=true"
+    
+    start_payload = {
+        "thread_name": f"APP: {discord_username} - {team_name}", # Required for Forum Channels
+        "embeds": [header_embed]
+    }
+
+    thread_id = None
+
     try:
-        response = requests.post(webhook_url, json=payload)
+        # Send the Header
+        resp = requests.post(thread_start_url, json=start_payload)
         
-        if not response.ok:
-            print(f"⚠️ Discord API Error [{response.status_code}]: {response.text}")
-            return jsonify({'success': False, 'error': f"Discord Error: {response.text}"}), response.status_code
+        if not resp.ok:
+            print(f"⚠️ Thread Creation Error: {resp.text}")
+            return jsonify({'success': False, 'error': f"Discord Error: {resp.text}"}), resp.status_code
             
-        response.raise_for_status() 
+        # Get the Thread ID from the response (channel_id of the message IS the thread id)
+        thread_id = resp.json().get('channel_id')
+        
     except requests.exceptions.RequestException as e:
         print(f"❌ Connection Error: {e}")
         return jsonify({'success': False, 'error': 'Failed to connect to Discord.'}), 500
+
+    # --- STEP 4: SEND ANSWERS (Batched) ---
+    # Now we post the answers into the thread we just created using ?thread_id=
+    
+    if thread_id:
+        followup_url = f"{webhook_url}?thread_id={thread_id}"
+        
+        answers = data.get('answers', {})
+        current_fields = []
+        current_char_count = 0
+        
+        # Function to send a batch of fields
+        def send_batch(fields):
+            if not fields: return
+            payload = {"embeds": [{"color": 10182117, "fields": fields}]}
+            try:
+                requests.post(followup_url, json=payload)
+                time.sleep(0.5) # Be nice to Discord API rate limits
+            except Exception as e:
+                print(f"Error sending batch: {e}")
+
+        # Loop through every answer
+        for question, answer in answers.items():
+            if not question or str(question).strip() == "": continue
+            
+            # 1. Truncate if user wrote an entire novel (Discord Limit is 1024)
+            val_str = clean(answer)
+            if len(val_str) > 1024:
+                val_str = val_str[:1021] + "..."
+            
+            # 2. Check Batch Limits (Max 25 fields OR Max 6000 chars per embed)
+            # We use a safe buffer of 5000 chars to be sure.
+            if len(current_fields) >= 25 or (current_char_count + len(val_str) > 5000):
+                send_batch(current_fields)
+                current_fields = []
+                current_char_count = 0
+            
+            current_fields.append({
+                "name": str(question)[:256], 
+                "value": val_str, 
+                "inline": False
+            })
+            current_char_count += len(val_str)
+
+        # 3. Send whatever is left
+        if current_fields:
+            send_batch(current_fields)
 
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
 
