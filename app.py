@@ -731,8 +731,6 @@ def submit_application():
 
     # 4. Construct Payload (FIXED FOR FORUM CHANNELS)
     payload = {
-        "username": "Application Bot",
-        "avatar_url": "https://i.imgur.com/AfFp7pu.png",
         "thread_name": f"App: {discord_username} - {team_name}", # REQUIRED for Forums
         "embeds": [embed]
     }
