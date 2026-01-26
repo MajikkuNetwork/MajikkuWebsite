@@ -679,27 +679,32 @@ def submit_application():
     if 'user' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # 1. Get Data safely
-    data = request.get_json(silent=True) or {} # silent=True prevents 400 if body is empty
+    # 1. Get Data Safely (Prevents crash if body is empty)
+    data = request.get_json(silent=True) or {}
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL") 
     
     if not webhook_url:
-        print("Error: No Application Webhook URL found.")
+        print("Error: No Application Webhook URL found in .env")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # HELPER: Aggressive cleaner
+    # HELPER: Aggressive cleaner to prevent Discord rejections
     def clean(val):
         if val is None: return "N/A"
         s = str(val).strip()
         if s == "": return "N/A"
         return s
 
-    # 2. Build Base Embed
+    # 2. Get User Info Safely (Prevents KeyError crash)
+    user_info = session.get('user', {})
+    discord_username = user_info.get('username', 'Unknown User')
+    discord_id = user_info.get('id', 'Unknown ID')
+
+    # 3. Build Base Embed
     embed = {
         "title": f"📝 New Application: {clean(data.get('team'))}",
         "color": 5763719,
         "fields": [
-            {"name": "Discord User", "value": f"{session.get('user', {}).get('username', 'Unknown')} (<@{session.get('user', {}).get('id', 'Unknown')}>)", "inline": True},
+            {"name": "Discord User", "value": f"{discord_username} (<@{discord_id}>)", "inline": True},
             {"name": "Hytale Username", "value": clean(data.get('hytale_name')), "inline": True},
             {"name": "Age", "value": clean(data.get('age')), "inline": True},
             {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
@@ -709,11 +714,11 @@ def submit_application():
         "footer": {"text": "Majikku Staff Application System"}
     }
 
-    # 3. Add Answers Loop (With Safety Checks)
+    # 4. Add Answers Loop (With Safety Checks)
     answers = data.get('answers', {})
-    if isinstance(answers, dict): # Ensure answers is actually a dictionary
+    if isinstance(answers, dict): 
         for question, answer in answers.items():
-            # Skip if question name is suspiciously empty
+            # Skip if question name is missing
             if not question or str(question).strip() == "":
                 continue
 
@@ -730,20 +735,22 @@ def submit_application():
                 "inline": False
             })
 
-    # 4. Debug & Send
+    # 5. Debug & Send
     try:
-        # PRINT THE PAYLOAD TO CONSOLE FOR DEBUGGING
-        # print(f"Sending payload: {embed}") 
+        # Debug print: Check your console if this works!
+        print(f"Attempting to send webhook to: {webhook_url}")
         
         response = requests.post(webhook_url, json={"embeds": [embed]})
         
-        if response.status_code != 204: # 204 is success for Webhooks
-            print(f"⚠️ Discord Error [{response.status_code}]: {response.text}")
+        # If Discord returns anything other than 2xx success
+        if not response.ok:
+            print(f"⚠️ Discord API Error [{response.status_code}]: {response.text}")
+            return jsonify({'success': False, 'error': f"Discord rejected the application (Code {response.status_code})"}), 500
             
         response.raise_for_status() 
     except requests.exceptions.RequestException as e:
         print(f"❌ Connection Error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to send application.'}), 500
+        return jsonify({'success': False, 'error': 'Failed to connect to Discord.'}), 500
 
     return jsonify({'success': True, 'message': 'Application submitted successfully!'})
 
