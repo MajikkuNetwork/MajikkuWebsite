@@ -679,22 +679,22 @@ def submit_application():
     if 'user' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # 1. Get Data Safely (Prevents crash if body is empty)
+    # 1. Get Data Safely
     data = request.get_json(silent=True) or {}
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL") 
     
     if not webhook_url:
-        print("Error: No Application Webhook URL found in .env")
+        print("Error: No Application Webhook URL found.")
         return jsonify({'success': False, 'error': 'Server configuration error.'}), 500
 
-    # HELPER: Aggressive cleaner to prevent Discord rejections
+    # HELPER: Ensure values are never empty (Discord rejects empty strings)
     def clean(val):
         if val is None: return "N/A"
         s = str(val).strip()
         if s == "": return "N/A"
         return s
 
-    # 2. Get User Info Safely (Prevents KeyError crash)
+    # 2. Get User Info Safely
     user_info = session.get('user', {})
     discord_username = user_info.get('username', 'Unknown User')
     discord_id = user_info.get('id', 'Unknown ID')
@@ -714,11 +714,11 @@ def submit_application():
         "footer": {"text": "Majikku Staff Application System"}
     }
 
-    # 4. Add Answers Loop (With Safety Checks)
+    # 4. Add Answers Loop (Strict Filtering)
     answers = data.get('answers', {})
     if isinstance(answers, dict): 
         for question, answer in answers.items():
-            # Skip if question name is missing
+            # CRITICAL FIX: Skip if the Question Title is empty (Causes Discord 400 Error)
             if not question or str(question).strip() == "":
                 continue
 
@@ -735,17 +735,19 @@ def submit_application():
                 "inline": False
             })
 
-    # 5. Debug & Send
+    # 5. Send to Discord with Detailed Debugging
     try:
-        # Debug print: Check your console if this works!
-        print(f"Attempting to send webhook to: {webhook_url}")
-        
+        # Debug: Print the payload to console so you can inspect it
+        # print(f"DEBUG PAYLOAD: {embed}") 
+
         response = requests.post(webhook_url, json={"embeds": [embed]})
         
-        # If Discord returns anything other than 2xx success
+        # If Discord says NO (400/401/404), return the specific reason
         if not response.ok:
-            print(f"⚠️ Discord API Error [{response.status_code}]: {response.text}")
-            return jsonify({'success': False, 'error': f"Discord rejected the application (Code {response.status_code})"}), 500
+            error_msg = response.text
+            print(f"⚠️ Discord API Error [{response.status_code}]: {error_msg}")
+            # Send the Discord error message back to the frontend for easy reading
+            return jsonify({'success': False, 'error': f"Discord Error {response.status_code}: {error_msg}"}), response.status_code
             
         response.raise_for_status() 
     except requests.exceptions.RequestException as e:
