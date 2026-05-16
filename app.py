@@ -220,8 +220,9 @@ def get_hytale_profile(discord_id):
 # --- STAFF CACHE ---
 STAFF_GROUPS = [
     {"name": "Leadership", "roles": [{"id": "1207778262378487918", "title": "Owner"}, {"id": "1207778264819572836", "title": "Administrator"}]},
-    {"name": "Team Leads", "roles": [{"id": "1207778271811346482", "title": "Staff Manager"},{"id": "1489438232042016999", "title": "System Administrator"}, {"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535925606715533", "title": "Lead Tester"}, {"id": "1454631224592171099", "title": "Lead Wiki Editor"}]},
+    {"name": "Team Leads", "roles": [{"id": "1207778271811346482", "title": "Staff Manager"}, {"id": "1489438232042016999", "title": "System Administrator"}, {"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1452004814375616765", "title": "Lead Storyteller"}, {"id": "1392535925606715533", "title": "Lead Tester"}, {"id": "1454631224592171099", "title": "Lead Wiki Editor"}]},
     {"name": "Development Team", "roles": [{"id": "1207778273166098502", "title": "Lead Developer"}, {"id": "1207778264190292052", "title": "Developer"}, {"id": "1392535924918714408", "title": "Jr. Developer"}]},
+    {"name": "Moderation Team", "roles": [{"id": "1207778265008439467", "title": "Senior Moderator"}, {"id": "1207778265931055204", "title": "Moderator"}, {"id": "1207778266572918904", "title": "Helper"}]}
     {"name": "Build Team", "roles": [{"id": "1207778274642759760", "title": "Lead Builder"}, {"id": "1452499233591791777", "title": "Senior Builder"}, {"id": "1207778275334553640", "title": "Builder"}]},
     {"name": "Modeling Team", "roles": [{"id": "1452499234103234690", "title": "Lead Modeler"}, {"id": "1452499235332292801", "title": "Senior Modeler"}, {"id": "1452499236091592806", "title": "Modeler"}]},
     {"name": "Coordinator Team", "roles": [{"id": "1207778273791184927", "title": "Lead Coordinator"}, {"id": "1392535922331095051", "title": "Event Coordinator"}, {"id": "1392535907965341806", "title": "Social Coordinator"}]},
@@ -229,7 +230,6 @@ STAFF_GROUPS = [
     {"name": "Art Team", "roles": [{"id": "1392535920665690142", "title": "Lead Artist"}, {"id": "1392535921487908945", "title": "Artist"}]},
     {"name": "Wiki Team", "roles": [{"id": "1454631224592171099", "title": "Lead Wiki Editor"}, {"id": "1454631225309401269", "title": "Wiki Editor"}]},
     {"name": "Tester Team", "roles": [{"id": "1392535925606715533", "title": "Lead Tester"}, {"id": "1452499234720055316", "title": "Senior Tester"}, {"id": "1392535923203379260", "title": "Tester"}]},
-    {"name": "Moderation Team", "roles": [{"id": "1207778265008439467", "title": "Senior Moderator"}, {"id": "1207778265931055204", "title": "Moderator"}, {"id": "1207778266572918904", "title": "Helper"}]}
 ]
 
 staff_cache = {"data": None, "timestamp": 0}
