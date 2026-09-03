@@ -599,13 +599,7 @@
             </div>
         </div>
 
-        <!--{% if player and player['hytale_uuid'] %}-->
         <button type="submit" class="submit-btn">Submit Application</button>
-        <!--{% else %}
-            <button type="button" class="submit-btn" disabled style="opacity: 0.5; cursor: not-allowed; background: #444;">
-                Link Account Required to Submit
-            </button>
-        {% endif %}-->
     </form>
 
 
@@ -628,7 +622,7 @@
             }
         }
 
-        // --- NEW CHARACTER COUNTER LOGIC ---
+        // --- CHARACTER COUNTER LOGIC ---
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('.counted-input');
 
@@ -638,21 +632,21 @@
 
                 const updateCount = () => {
                     const currentLength = input.value.length;
-                    counter.innerText = `${currentLength} / ${max}`;
-                    
-                    if (currentLength >= max) {
-                        counter.classList.add('limit-reached');
-                    } else {
-                        counter.classList.remove('limit-reached');
+                    if (counter && counter.classList.contains('char-count')) {
+                        counter.innerText = `${currentLength} / ${max}`;
+                        
+                        if (currentLength >= max) {
+                            counter.classList.add('limit-reached');
+                        } else {
+                            counter.classList.remove('limit-reached');
+                        }
                     }
                 };
 
                 input.addEventListener('input', updateCount);
-                // Initialize on load
                 updateCount();
             });
         });
-        // -----------------------------------
 
         const form = document.getElementById('appForm');
         form.addEventListener('submit', async function(event) {
@@ -714,7 +708,7 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    document.querySelector('.container').innerHTML = `
+                    document.querySelector('.content-wrapper').innerHTML = `
                         <h1 style="color:var(--accent)">Application Sent!</h1>
                         <p style="text-align:center">Thank you for applying to the Majikku Network.</p>
                         <p style="text-align:center"><a href="/" style="color:white">Return Home</a></p>
