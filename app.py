@@ -4,6 +4,10 @@ import os
 import time
 import mysql.connector 
 from dotenv import load_dotenv
+import secrets
+import hashlib
+import base64
+from urllib.parse import urlencode
 
 # Load sensitive info from .env file
 load_dotenv()
@@ -17,12 +21,31 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
 
+# Shared Majikku identity/game database.
+GENERAL_DB = os.getenv("MYSQL_GENERAL_DB", "majikkuo_general")
+
 # Webhooks
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL") 
 APPEALS_WEBHOOK_URL = os.getenv("APPEALS_WEBHOOK_URL") 
 
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 API_ENDPOINT = 'https://discord.com/api/v10'
+# --- HYTALE OAUTH ---
+HYTALE_CLIENT_ID = os.getenv("HYTALE_CLIENT_ID")
+HYTALE_CLIENT_SECRET = os.getenv("HYTALE_CLIENT_SECRET")
+HYTALE_REDIRECT_URI = os.getenv(
+    "HYTALE_REDIRECT_URI",
+    "https://majikku.org/auth/hytale/callback"
+)
+
+HYTALE_AUTH_URL = "https://oauth.accounts.hytale.com/oauth2/auth"
+HYTALE_TOKEN_URL = "https://oauth.accounts.hytale.com/oauth2/token"
+
+HYTALE_SCOPES = [
+    "openid",
+    "hytale:profile",
+    "account:game_ownership"
+]
 
 # --- ROLE IDS (PERMISSIONS) ---
 # 1. ADMINS: Can do everything
@@ -207,15 +230,147 @@ seed_wiki_db()
 
 # --- HELPERS ---
 def get_hytale_profile(discord_id):
+    """
+    Return the permanent Discord -> Hytale identity link for this user.
+
+    account_links is the authoritative ownership bridge. core_players is used
+    only to prefer the player's latest known in-game username when available.
+    """
+    conn = None
+    cursor = None
+
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True) 
-        cursor.execute("SELECT hytale_uuid, time_played FROM players WHERE discord_id = %s LIMIT 1", (discord_id,))
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(f"""
+            SELECT
+                al.hytale_uuid,
+                COALESCE(cp.username, al.hytale_name) AS hytale_name
+            FROM `{GENERAL_DB}`.`account_links` AS al
+            LEFT JOIN `{GENERAL_DB}`.`core_players` AS cp
+                ON cp.hytale_uuid = al.hytale_uuid
+            WHERE al.discord_id = %s
+            LIMIT 1
+        """, (str(discord_id),))
+
         result = cursor.fetchone()
-        cursor.close()
-        conn.close()
+
+        if result:
+            result["verified"] = True
+            result["verification_source"] = "majikku"
+
         return result
-    except: return None
+
+    except Exception as e:
+        print(f"HYTALE LINK LOOKUP ERROR: {e}")
+        return None
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+
+
+def save_hytale_link(discord_user, hytale_uuid, hytale_name):
+    """
+    Persist a Hytale identity verified through Hytale OAuth.
+
+    Discord identity comes from the authenticated Discord session and Hytale
+    identity comes from Hytale's authenticated response. Client-submitted UUIDs
+    are never trusted as proof of ownership.
+    """
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+            INSERT INTO `{GENERAL_DB}`.`account_links`
+                (hytale_uuid, hytale_name, discord_id, discord_username, discord_display_name)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                hytale_name = VALUES(hytale_name),
+                discord_username = VALUES(discord_username),
+                discord_display_name = VALUES(discord_display_name),
+                updated_at = CURRENT_TIMESTAMP
+        """, (
+            str(hytale_uuid),
+            str(hytale_name),
+            str(discord_user["id"]),
+            discord_user.get("username"),
+            discord_user.get("global_name") or discord_user.get("username")
+        ))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"HYTALE LINK SAVE ERROR: {e}")
+        return False
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+
+
+def create_pkce_pair():
+    verifier = secrets.token_urlsafe(64)
+
+    digest = hashlib.sha256(
+        verifier.encode("ascii")
+    ).digest()
+
+    challenge = (
+        base64.urlsafe_b64encode(digest)
+        .rstrip(b"=")
+        .decode("ascii")
+    )
+
+    return verifier, challenge
+
+
+def get_application_hytale_identity():
+    """
+    Resolve the authenticated user's Hytale identity.
+
+    Priority:
+    1. Permanent Majikku account_links record.
+    2. Hytale OAuth identity from this browser session.
+    """
+
+    if "user" not in session:
+        return None
+
+    # Existing Majikku account link wins.
+    linked_profile = get_hytale_profile(
+        session["user"]["id"]
+    )
+
+    if linked_profile:
+        return linked_profile
+
+    # Otherwise use the Hytale identity authenticated
+    # during this session.
+    oauth_profile = session.get("hytale_profile")
+
+    if oauth_profile:
+        return {
+            "hytale_uuid": oauth_profile.get("hytale_uuid"),
+            "hytale_name": oauth_profile.get("hytale_name"),
+            "owns_hytale": oauth_profile.get("owns_hytale"),
+            "verified": True,
+            "verification_source": "hytale"
+        }
+
+    return None
 
 # --- STAFF CACHE ---
 STAFF_GROUPS = [
@@ -489,6 +644,210 @@ def callback():
         return f"Internal Login Error: {e}"
     
     return redirect(url_for('home'))
+
+@app.route("/auth/hytale")
+def hytale_login():
+    # Hytale linking only happens after Discord login.
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    if not HYTALE_CLIENT_ID or not HYTALE_CLIENT_SECRET:
+        print("HYTALE ERROR: Missing client ID or client secret.")
+        return "Hytale authentication is not configured.", 500
+
+    # OAuth CSRF protection.
+    state = secrets.token_urlsafe(32)
+
+    # OIDC replay protection.
+    nonce = secrets.token_urlsafe(32)
+
+    # PKCE protection.
+    verifier, challenge = create_pkce_pair()
+
+    session["hytale_oauth_state"] = state
+    session["hytale_oauth_nonce"] = nonce
+    session["hytale_code_verifier"] = verifier
+
+    params = {
+        "client_id": HYTALE_CLIENT_ID,
+        "redirect_uri": HYTALE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": " ".join(HYTALE_SCOPES),
+        "state": state,
+        "nonce": nonce,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256"
+    }
+
+    return redirect(
+        HYTALE_AUTH_URL + "?" + urlencode(params)
+    )
+
+@app.route("/auth/hytale/callback")
+def hytale_callback():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    # User denied access or Hytale returned an OAuth error.
+    oauth_error = request.args.get("error")
+
+    if oauth_error:
+        print(
+            "HYTALE OAUTH ERROR:",
+            oauth_error,
+            request.args.get("error_description")
+        )
+
+        return redirect(url_for("apply"))
+
+    code = request.args.get("code")
+    returned_state = request.args.get("state")
+
+    expected_state = session.pop(
+        "hytale_oauth_state",
+        None
+    )
+
+    verifier = session.pop(
+        "hytale_code_verifier",
+        None
+    )
+
+    # Make sure this callback belongs to the login
+    # request that we started.
+    if (
+        not code
+        or not returned_state
+        or not expected_state
+        or not verifier
+        or not secrets.compare_digest(
+            returned_state,
+            expected_state
+        )
+    ):
+        return (
+            "Invalid or expired Hytale authentication request.",
+            400
+        )
+
+    try:
+        # Exchange the authorization code.
+        token_response = requests.post(
+            HYTALE_TOKEN_URL,
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": HYTALE_REDIRECT_URI,
+                "code_verifier": verifier
+            },
+            auth=(
+                HYTALE_CLIENT_ID,
+                HYTALE_CLIENT_SECRET
+            ),
+            headers={
+                "Content-Type":
+                    "application/x-www-form-urlencoded"
+            },
+            timeout=10
+        )
+
+        token_response.raise_for_status()
+
+        token_data = token_response.json()
+
+        access_token = token_data.get("access_token")
+
+        if not access_token:
+            raise RuntimeError(
+                "Hytale did not return an access token."
+            )
+
+        # Retrieve the selected profile claims.
+        #
+        # Hytale exposes UserInfo through its OIDC service.
+        userinfo_response = requests.get(
+            "https://connect.accounts.hytale.com/userinfo",
+            headers={
+                "Authorization":
+                    f"Bearer {access_token}"
+            },
+            timeout=10
+        )
+
+        userinfo_response.raise_for_status()
+
+        claims = userinfo_response.json()
+
+        # Keep this during our first test.
+        # It prints claim NAMES, not secrets/tokens.
+        print(
+            "HYTALE CLAIM KEYS:",
+            list(claims.keys())
+        )
+
+        profile_uuid = (
+            claims.get("profileUuid")
+            or claims.get("profile_uuid")
+        )
+
+        profile_username = (
+            claims.get("profileUsername")
+            or claims.get("profile_username")
+        )
+
+        owns_hytale = (
+            claims.get("gameOwnership")
+            if "gameOwnership" in claims
+            else claims.get("game_ownership")
+        )
+
+        if not profile_uuid or not profile_username:
+            print(
+                "HYTALE ERROR: Profile claim missing."
+            )
+
+            return (
+                "Hytale login succeeded, but no "
+                "game profile was selected.",
+                400
+            )
+
+        # IMPORTANT:
+        # Do NOT store the Hytale access token.
+        #
+        # We only need the verified identity.
+        session["hytale_profile"] = {
+            "hytale_uuid": str(profile_uuid),
+            "hytale_name": str(profile_username),
+            "owns_hytale": owns_hytale
+        }
+
+        # Persist the verified Discord <-> Hytale relationship. After this,
+        # future application visits can resolve the account directly from DB.
+        if not save_hytale_link(session["user"], profile_uuid, profile_username):
+            return (
+                "Hytale was verified, but Majikku could not save the account link.",
+                500
+            )
+
+        session.pop("hytale_profile", None)
+        return redirect(url_for("apply"))
+
+    except requests.RequestException as e:
+        print(f"HYTALE HTTP ERROR: {e}")
+
+        if getattr(e, "response", None) is not None:
+            print(
+                "HYTALE RESPONSE:",
+                e.response.text
+            )
+
+        return "Hytale authentication failed.", 500
+
+    except Exception as e:
+        print(f"HYTALE AUTH ERROR: {e}")
+
+        return "Hytale authentication failed.", 500
 
 @app.route('/logout')
 def logout():
@@ -793,9 +1152,16 @@ def legal_page(doc_type):
 # --- FORMS ---
 @app.route('/apply')
 def apply():
-    if 'user' not in session: return redirect(url_for('login'))
-    hytale_data = get_hytale_profile(session['user']['id'])
-    return render_template('apply.html', user=session['user'], player=hytale_data)
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    hytale_data = get_application_hytale_identity()
+
+    return render_template(
+        'apply.html',
+        user=session['user'],
+        player=hytale_data
+    )
 
 @app.route('/submit', methods=['POST'])
 def submit_application():
@@ -818,10 +1184,21 @@ def submit_application():
         if s == "": return "N/A"
         return s
 
+    # Resolve Hytale identity on the server. The browser may display/send these
+    # values, but it is not trusted as the source of account ownership.
+    hytale_identity = get_application_hytale_identity()
+    if not hytale_identity or not hytale_identity.get("hytale_uuid"):
+        return jsonify({
+            'success': False,
+            'error': 'A verified Hytale account is required before applying.'
+        }), 403
+
     # 2. Prep Basic Info
     team_name = clean(data.get('team', 'General'))
     discord_username = user.get('username', 'Unknown')
     discord_id = user.get('id', 'Unknown')
+    hytale_name = clean(hytale_identity.get('hytale_name'))
+    hytale_uuid = clean(hytale_identity.get('hytale_uuid'))
     
     avatar_url = None
     if user.get("avatar"):
@@ -836,7 +1213,8 @@ def submit_application():
         "thumbnail": {"url": avatar_url} if avatar_url else {},
         "fields": [
             {"name": "Discord User", "value": f"<@{discord_id}> ({discord_username})", "inline": False},
-            {"name": "Hytale Name", "value": clean(data.get('hytale_name')), "inline": True},
+            {"name": "Hytale Name", "value": hytale_name, "inline": True},
+            {"name": "Hytale UUID", "value": hytale_uuid, "inline": False},
             {"name": "Age", "value": clean(data.get('age')), "inline": True},
             {"name": "Timezone", "value": clean(data.get('timezone')), "inline": True},
             {"name": "Availability", "value": clean(data.get('availability')), "inline": True},
@@ -857,7 +1235,7 @@ def submit_application():
 
     try:
         # Send the Header
-        resp = requests.post(thread_start_url, json=start_payload)
+        resp = requests.post(thread_start_url, json=start_payload, timeout=10)
         
         if not resp.ok:
             print(f"⚠️ Thread Creation Error: {resp.text}")
@@ -885,7 +1263,7 @@ def submit_application():
             if not fields: return
             payload = {"embeds": [{"color": 10182117, "fields": fields}]}
             try:
-                requests.post(followup_url, json=payload)
+                requests.post(followup_url, json=payload, timeout=10)
                 time.sleep(0.5) # Be nice to Discord API rate limits
             except Exception as e:
                 print(f"Error sending batch: {e}")
@@ -972,4 +1350,4 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes"})

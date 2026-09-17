@@ -78,11 +78,85 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label>What is your Hytale Username?</label>
-            <input type="text" id="hytale_name" maxlength="16" placeholder="Enter your expected in-game username" required>
-            <div class="desc-text">Since the server is not yet live, please enter the name you have/plan to use.</div>
-        </div>
+        {% if player %}
+
+            <div class="form-group">
+                <label>Hytale Account</label>
+
+                <div style="
+                    border: 1px solid var(--accent);
+                    border-radius: 8px;
+                    padding: 15px;
+                    background: rgba(0, 212, 255, 0.05);
+                ">
+
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: var(--accent);">
+                            ✓ Verified Hytale Account
+                        </strong>
+                    </div>
+
+                    <label>Hytale Username</label>
+
+                    <input
+                        type="text"
+                        id="hytale_name"
+                        value="{{ player['hytale_name'] }}"
+                        readonly
+                    >
+
+                    <label style="margin-top: 12px;">
+                        Hytale UUID
+                    </label>
+
+                    <input
+                        type="text"
+                        id="hytale_uuid"
+                        value="{{ player['hytale_uuid'] }}"
+                        readonly
+                    >
+
+                    {% if player.get('verification_source') == 'majikku' %}
+
+                    <div class="desc-text">
+                        ✓ Hytale account linked through Majikku.
+                    </div>
+
+                    {% else %}
+
+                    <div class="desc-text">
+                        ✓ Hytale account verified directly through Hytale.
+                    </div>
+
+                    {% endif %}
+
+                </div>
+            </div>
+
+            {% else %}
+
+            <div class="form-group">
+                <label>Hytale Account Required</label>
+
+                <div class="desc-text" style="margin-bottom: 15px;">
+                    A verified Hytale account is required to submit
+                    an application.
+                </div>
+
+                <a
+                    href="{{ url_for('hytale_login') }}"
+                    class="submit-btn"
+                    style="
+                        display: inline-block;
+                        text-decoration: none;
+                        text-align: center;
+                    "
+                >
+                    Connect Hytale Account
+                </a>
+            </div>
+
+            {% endif %}
 
         <div style="display: flex; gap: 20px;">
             <div class="form-group" style="flex: 1;">
@@ -599,7 +673,17 @@
             </div>
         </div>
 
-        <button type="submit" class="submit-btn">Submit Application</button>
+        <button
+            type="submit"
+            class="submit-btn"
+            {% if not player %}disabled{% endif %}
+        >
+            {% if player %}
+                Submit Application
+            {% else %}
+                Connect Hytale Account to Apply
+            {% endif %}
+        </button>
     </form>
 
 
@@ -663,7 +747,12 @@
             
             // Gather General Info
             const payload = {
-                hytale_name: document.getElementById('hytale_name').value,
+                hytale_name: document.getElementById('hytale_name')
+                    ? document.getElementById('hytale_name').value
+                    : null,
+                hytale_uuid: document.getElementById('hytale_uuid')
+                    ? document.getElementById('hytale_uuid').value
+                    : null,
                 age: document.getElementById('age').value,
                 timezone: document.getElementById('timezone').value,
                 availability: document.getElementById('availability').value,
@@ -693,7 +782,7 @@
             payload.answers["DMs Enabled?"] = document.getElementById('check_dms').checked ? "Yes" : "No";
 
             // Send
-            const btn = document.querySelector('.submit-btn');
+            const btn = form.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
             btn.innerText = "Sending...";
             btn.disabled = true;
