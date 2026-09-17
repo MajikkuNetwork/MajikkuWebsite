@@ -443,25 +443,89 @@ STAFF_GROUPS = [
 staff_cache = {"data": None, "timestamp": 0}
 
 def get_staff_data():
-    if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]: return staff_cache["data"]
+    if time.time() - staff_cache["timestamp"] < 300 and staff_cache["data"]:
+        return staff_cache["data"]
+
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
+
     try:
-        response = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members?limit=1000", headers=headers)
-        if response.status_code != 200: return {}
+        response = requests.get(
+            f"{API_ENDPOINT}/guilds/{GUILD_ID}/members?limit=1000",
+            headers=headers,
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            return {}
+
         members = response.json()
         grouped = {group["name"]: [] for group in STAFF_GROUPS}
+
+        # Load all Discord -> Hytale links once, rather than doing one SQL
+        # query per staff card.
+        hytale_by_discord = {}
+        conn = None
+        cursor = None
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(f"""
+                SELECT
+                    al.discord_id,
+                    COALESCE(cp.username, al.hytale_name) AS hytale_name
+                FROM `{GENERAL_DB}`.`account_links` AS al
+                LEFT JOIN `{GENERAL_DB}`.`core_players` AS cp
+                    ON cp.hytale_uuid = al.hytale_uuid
+            """)
+
+            for row in cursor.fetchall():
+                if row.get("discord_id"):
+                    hytale_by_discord[str(row["discord_id"])] = row.get("hytale_name")
+
+        except Exception as e:
+            print(f"STAFF HYTALE LOOKUP ERROR: {e}")
+
+        finally:
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
+
         for member in members:
             user = member.get("user", {})
+            user_id = str(user.get("id", ""))
             user_roles = member.get("roles", [])
-            avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png" if user.get("avatar") else "https://cdn.discordapp.com/embed/avatars/0.png"
+
+            avatar = (
+                f"https://cdn.discordapp.com/avatars/{user_id}/{user['avatar']}.png"
+                if user.get("avatar")
+                else "https://cdn.discordapp.com/embed/avatars/0.png"
+            )
+
             for group in STAFF_GROUPS:
                 found = None
-                for r in group["roles"]:
-                    if r["id"] in user_roles: found = r["title"]; break
-                if found: grouped[group["name"]].append({"name": member.get("nick") or user.get("username"), "avatar": avatar, "role": found})
-        staff_cache["data"] = grouped; staff_cache["timestamp"] = time.time()
+
+                for role in group["roles"]:
+                    if role["id"] in user_roles:
+                        found = role["title"]
+                        break
+
+                if found:
+                    grouped[group["name"]].append({
+                        "name": member.get("nick") or user.get("username"),
+                        "avatar": avatar,
+                        "role": found,
+                        "hytale_name": hytale_by_discord.get(user_id)
+                    })
+
+        staff_cache["data"] = grouped
+        staff_cache["timestamp"] = time.time()
         return grouped
-    except: return {}
+
+    except Exception as e:
+        print(f"STAFF DATA ERROR: {e}")
+        return {}
 
 # --- PERMISSION CHECKS (The Internal Logic) ---
 def check_role(user_id, role_ids):
@@ -1342,7 +1406,7 @@ def submit_application():
 @app.route('/appeal')
 def appeal():
     if 'user' not in session: return redirect(url_for('login'))
-    hytale_data = get_hytale_profile(session['user']['id'])
+    hytale_data = get_application_hytale_identity()
     return render_template('appeal.html', user=session['user'], player=hytale_data)
 
 @app.route('/submit-appeal', methods=['POST'])
