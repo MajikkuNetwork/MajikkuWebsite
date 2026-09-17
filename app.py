@@ -38,8 +38,10 @@ HYTALE_REDIRECT_URI = os.getenv(
     "https://majikku.org/auth/hytale/callback"
 )
 
-HYTALE_AUTH_URL = "https://oauth.accounts.hytale.com/oauth2/auth"
-HYTALE_TOKEN_URL = "https://oauth.accounts.hytale.com/oauth2/token"
+HYTALE_ISSUER = "https://connect.accounts.hytale.com"
+HYTALE_AUTH_URL = f"{HYTALE_ISSUER}/oauth2/auth"
+HYTALE_TOKEN_URL = f"{HYTALE_ISSUER}/oauth2/token"
+HYTALE_USERINFO_URL = f"{HYTALE_ISSUER}/userinfo"
 
 HYTALE_SCOPES = [
     "openid",
@@ -277,33 +279,84 @@ def save_hytale_link(discord_user, hytale_uuid, hytale_name):
     """
     Persist a Hytale identity verified through Hytale OAuth.
 
-    Discord identity comes from the authenticated Discord session and Hytale
-    identity comes from Hytale's authenticated response. Client-submitted UUIDs
-    are never trusted as proof of ownership.
+    Refuse conflicting links instead of relying on ON DUPLICATE KEY UPDATE:
+    one Discord account maps to one Hytale UUID and one Hytale UUID maps to
+    one Discord account.
     """
     conn = None
     cursor = None
 
+    discord_id = str(discord_user["id"])
+    hytale_uuid = str(hytale_uuid)
+    hytale_name = str(hytale_name)
+    discord_username = discord_user.get("username")
+    discord_display_name = (
+        discord_user.get("global_name")
+        or discord_username
+    )
+
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute(f"""
-            INSERT INTO `{GENERAL_DB}`.`account_links`
-                (hytale_uuid, hytale_name, discord_id, discord_username, discord_display_name)
-            VALUES (%s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                hytale_name = VALUES(hytale_name),
-                discord_username = VALUES(discord_username),
-                discord_display_name = VALUES(discord_display_name),
-                updated_at = CURRENT_TIMESTAMP
-        """, (
-            str(hytale_uuid),
-            str(hytale_name),
-            str(discord_user["id"]),
-            discord_user.get("username"),
-            discord_user.get("global_name") or discord_user.get("username")
-        ))
+            SELECT id, hytale_uuid, discord_id
+            FROM `{GENERAL_DB}`.`account_links`
+            WHERE discord_id = %s OR hytale_uuid = %s
+            FOR UPDATE
+        """, (discord_id, hytale_uuid))
+
+        existing = cursor.fetchall()
+
+        for row in existing:
+            existing_discord = str(row["discord_id"])
+            existing_hytale = str(row["hytale_uuid"])
+
+            if existing_discord == discord_id and existing_hytale != hytale_uuid:
+                print("HYTALE LINK CONFLICT: Discord account is already linked to another Hytale UUID.")
+                conn.rollback()
+                return False
+
+            if existing_hytale == hytale_uuid and existing_discord != discord_id:
+                print("HYTALE LINK CONFLICT: Hytale UUID is already linked to another Discord account.")
+                conn.rollback()
+                return False
+
+        same_link = next(
+            (
+                row for row in existing
+                if str(row["discord_id"]) == discord_id
+                and str(row["hytale_uuid"]) == hytale_uuid
+            ),
+            None
+        )
+
+        if same_link:
+            cursor.execute(f"""
+                UPDATE `{GENERAL_DB}`.`account_links`
+                SET hytale_name = %s,
+                    discord_username = %s,
+                    discord_display_name = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (
+                hytale_name,
+                discord_username,
+                discord_display_name,
+                same_link["id"]
+            ))
+        else:
+            cursor.execute(f"""
+                INSERT INTO `{GENERAL_DB}`.`account_links`
+                    (hytale_uuid, hytale_name, discord_id, discord_username, discord_display_name)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                hytale_uuid,
+                hytale_name,
+                discord_id,
+                discord_username,
+                discord_display_name
+            ))
 
         conn.commit()
         return True
@@ -766,7 +819,7 @@ def hytale_callback():
         #
         # Hytale exposes UserInfo through its OIDC service.
         userinfo_response = requests.get(
-            "https://connect.accounts.hytale.com/userinfo",
+            HYTALE_USERINFO_URL,
             headers={
                 "Authorization":
                     f"Bearer {access_token}"
@@ -785,21 +838,10 @@ def hytale_callback():
             list(claims.keys())
         )
 
-        profile_uuid = (
-            claims.get("profileUuid")
-            or claims.get("profile_uuid")
-        )
-
-        profile_username = (
-            claims.get("profileUsername")
-            or claims.get("profile_username")
-        )
-
-        owns_hytale = (
-            claims.get("gameOwnership")
-            if "gameOwnership" in claims
-            else claims.get("game_ownership")
-        )
+        profile = claims.get("profile") or {}
+        profile_uuid = profile.get("uuid")
+        profile_username = profile.get("username")
+        owns_hytale = claims.get("game_ownership")
 
         if not profile_uuid or not profile_username:
             print(
