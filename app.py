@@ -275,6 +275,129 @@ def check_is_lead_wiki(uid): return check_role(uid, [LEAD_WIKI_EDITOR_ID])
 def check_is_wiki_editor(uid): return check_role(uid, [WIKI_EDITOR_ID])
 
 # --- DISCORD MESSAGING ---
+def send_report_bot_message(
+    report_id,
+    report_type,
+    source,
+    reporter_name,
+    target_name,
+    server_origin,
+    reason,
+    evidence,
+    is_anon
+):
+    """Route PLAYER reports to Moderation and STAFF reports to Leadership."""
+
+    PLAYER_REPORT_CHANNEL_ID = "1459994350401487143"
+    STAFF_REPORT_CHANNEL_ID = "1459996700256243834"
+
+    report_type = (report_type or "PLAYER").upper()
+
+    if report_type == "STAFF":
+        channel_id = STAFF_REPORT_CHANNEL_ID
+        title = f"🚨 STAFF REPORT #{report_id}"
+        color = 10181046  # Purple
+    else:
+        channel_id = PLAYER_REPORT_CHANNEL_ID
+        title = f"⚠️ PLAYER REPORT #{report_id}"
+        color = 15158332  # Red
+
+    displayed_reporter = "Anonymous User" if is_anon else reporter_name
+
+    fields = [
+        {
+            "name": "Reported User",
+            "value": target_name or "Unknown",
+            "inline": True
+        },
+        {
+            "name": "Server/Origin",
+            "value": server_origin or "Not specified",
+            "inline": True
+        },
+        {
+            "name": "Reported By",
+            "value": displayed_reporter,
+            "inline": True
+        },
+        {
+            "name": "Reason / Incident",
+            "value": (reason or "No reason provided.")[:1024],
+            "inline": False
+        },
+        {
+            "name": "Evidence",
+            "value": (evidence or "No evidence provided.")[:1024],
+            "inline": False
+        }
+    ]
+
+    embed = {
+        "title": title,
+        "color": color,
+        "fields": fields,
+        "footer": {
+            "text": f"Source: {source} | ID: {report_id} | Status: OPEN"
+        }
+    }
+
+    # Extra warning on anonymous reports
+    if is_anon:
+        embed["description"] = (
+            "🔴 **THIS USER WOULD LIKE TO REMAIN ANONYMOUS** 🔴\n"
+            "Please handle this ticket with discretion."
+        )
+
+    # Claim / Investigate button
+    components = [
+        {
+            "type": 1,
+            "components": [
+                {
+                    "type": 2,
+                    "style": 1,
+                    "label": "🔎 Claim / Investigate",
+                    "custom_id": f"claim_report_{report_id}"
+                }
+            ]
+        }
+    ]
+
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+
+    headers = {
+        "Authorization": f"Bot {BOT_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            json={
+                "embeds": [embed],
+                "components": components
+            },
+            timeout=10
+        )
+
+        if response.ok:
+            print(
+                f"Report #{report_id} sent to "
+                f"{'Leadership' if report_type == 'STAFF' else 'Moderation'}."
+            )
+            return True
+
+        print(
+            f"REPORT DISCORD ERROR #{report_id}: "
+            f"{response.status_code} - {response.text}"
+        )
+        return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"REPORT DISCORD CONNECTION ERROR #{report_id}: {e}")
+        return False
+
 def send_wiki_approval_request(sub_id, title, category, author_name, sub_type, content):
     """Sends Wiki Approval Embed to Leadership with a content preview."""
     channel_id = os.getenv("WIKI_APPROVAL_CHANNEL_ID") 
