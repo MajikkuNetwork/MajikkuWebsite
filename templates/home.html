@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1 style="font-size: 3rem;">Welcome to Majikku</h1>
-
-    <h2 class="section-title">Latest Announcements</h2>
-    
-    {% if announcements %}
-        {% for post in announcements %}
-        <div class="announcement">
-            <h3>{{ post.title }}</h3>
-            <div style="margin-bottom: 10px;">{{ post.content | safe }}</div>
-            <div style="font-size: 0.8rem; color: var(--primary);">Posted by {{ post.author }} at {{ post.created_at }}</div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="text-align: center; color: #aaa;">No announcements yet.</p>
-    {% endif %}
-
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-kicker">A world shaped by magic</div>
+    <h1>Welcome to Majikku</h1>
+    <p>Adventure across a community-built Hytale network where exploration, creativity, lore, and custom experiences come together beneath the aurora.</p>
+    <div class="hero-actions">
+      <a class="btn" href="/wiki">Explore the Wiki</a>
+      <a class="btn" href="/events">View Events</a>
+      <a class="btn" href="https://discord.com/invite/yMDBmnQCYd" target="_blank" rel="noopener noreferrer">Join Discord</a>
+    </div>
+  </div>
+</section>
+<h2 class="section-title">Latest Announcements</h2>
+{% if announcements %}
+  {% for post in announcements %}
+  <article class="announcement"><h3>{{ post.title }}</h3><div>{{ post.content | safe }}</div><div class="desc-text" style="margin-top:14px">Posted by {{ post.author }} at {{ post.created_at }}</div></article>
+  {% endfor %}
+{% else %}
+  <div class="notice-card" style="text-align:center">No announcements yet. Check back soon.</div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+<div style="max-width:720px;margin:70px auto;text-align:center">
+<div class="hero-kicker">Majikku Network</div><h1>{{ title }}</h1>
+<p style="color:var(--muted);line-height:1.7">{{ message }}</p>
+{% if action_url and action_label %}<a class="btn" href="{{ action_url }}" style="margin-top:18px">{{ action_label }}</a>{% endif %}
+</div>{% endblock %}

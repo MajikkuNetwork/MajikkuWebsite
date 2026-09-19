@@ -1,596 +1,144 @@
-/* =========================================
-   THE MAJIKKU "AURORA" THEME
-   ========================================= */
 
-:root {
-    /* --- THE PALETTE --- */
-    /* The Anchor Light (Bright Teal/Cyan) */
-    --primary: #00e0c6;
-    --primary-glow: rgba(0, 224, 198, 0.6);
-    
-    /* The Void (Deep Royal Purple) */
-    --secondary: #5e38a8;
-    
-    /* The Magic (Accent Blue) */
-    --accent: #4cc9f0;
-    
-    /* Backgrounds */
-    --bg-deep: #050a14; /* Very dark blue-black */
-    
-    /* Glassmorphism */
-    --glass: rgba(6, 28, 38, 0.75); /* Dark teal-tinted glass */
-    --border: rgba(0, 224, 198, 0.3); /* Teal border */
-    
-    /* Text */
-    --text-main: #e0fbfc;
-    --text-muted: #94a3b8;
+:root{
+  --cyan:#63f5ed;--cyan-2:#8ffcff;--aqua:#37d7e6;--violet:#b275ff;--pink:#ef79ff;
+  --gold:#ffe69a;--ink:#071426;--ink-2:#0b1730;--glass:rgba(12,27,55,.68);
+  --glass-strong:rgba(10,21,47,.86);--line:rgba(127,240,255,.25);
+  --line-strong:rgba(124,246,238,.48);--text:#f4fbff;--muted:#b9cbe2;
+  --danger:#ff718c;--success:#70f2b5;--shadow:0 22px 70px rgba(3,9,30,.52);
+  --primary:var(--cyan);--secondary:var(--violet);--accent:var(--aqua);
+  --primary-glow:rgba(99,245,237,.42);--bg-deep:var(--ink);--border:var(--line);
 }
-
-/* --- MAIN BODY & BACKGROUND --- */
-body {
-    font-family: 'Inter', sans-serif;
-    color: var(--text-main);
-    margin: 0;
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;
+  color:var(--text);font-family:'Inter',sans-serif;background:#071426;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-3;
+  background:url("background.jpg") center 35%/cover no-repeat;
+  filter:saturate(1.15) brightness(.72);transform:scale(1.015);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 8%,rgba(106,255,246,.08),transparent 35%),
+    linear-gradient(180deg,rgba(24,35,92,.16) 0%,rgba(8,17,42,.50) 50%,rgba(4,10,27,.92) 100%);
+}
+a{color:var(--cyan-2)}
+a:hover{color:#fff}
+.navbar{
+  min-height:64px;padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;
+  position:sticky;top:0;z-index:1000;background:rgba(6,13,34,.80);
+  border-bottom:1px solid var(--line);box-shadow:0 10px 35px rgba(4,8,28,.28);
+  backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25)
+}
+.nav-brand{display:flex;align-items:center;color:#fff;text-decoration:none;font-family:'Cinzel',serif;font-size:1.35rem;font-weight:700;letter-spacing:.8px;text-shadow:0 0 18px rgba(112,247,239,.28)}
+.nav-links{display:flex;align-items:stretch;gap:2px}
+.nav-item{position:relative;display:flex;align-items:stretch}
+.nav-link,.nav-links>a{
+  min-height:64px;padding:0 13px;display:flex;align-items:center;border:0;background:transparent;
+  color:rgba(244,251,255,.84);text-decoration:none;font-family:'Cinzel',serif;font-size:.76rem;
+  font-weight:700;letter-spacing:.75px;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:.2s
+}
+.nav-link:hover,.nav-links>a:hover,.nav-item.open>.nav-link{color:var(--cyan);background:rgba(99,245,237,.06)}
+.nav-caret{margin-left:6px;font-size:.58rem;transition:.2s}.nav-item.open .nav-caret{transform:rotate(180deg)}
+.nav-highlight{color:var(--gold)!important}.nav-btn-admin,.nav-btn-logout{align-self:center;min-height:auto!important;margin:0 4px!important;padding:7px 11px!important;border-radius:8px}
+.nav-btn-admin{border:1px solid var(--cyan)!important;color:var(--cyan)!important}.nav-btn-logout{border:1px solid rgba(239,121,255,.55)!important}
+.nav-dropdown,.support-mega{
+  position:absolute;top:calc(100% + 1px);right:0;background:rgba(8,18,45,.96);border:1px solid var(--line-strong);
+  box-shadow:var(--shadow);backdrop-filter:blur(22px);opacity:0;visibility:hidden;transform:translateY(-7px);
+  pointer-events:none;transition:.18s;border-radius:0 0 14px 14px
+}
+.nav-dropdown{min-width:270px;padding:10px}.support-item{position:static}
+.support-mega{right:24px;width:min(800px,calc(100vw - 48px));padding:22px}
+.nav-item.open>.nav-dropdown,.nav-item.open>.support-mega{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+.dropdown-link,.mega-link{display:block;text-decoration:none;border-radius:9px;transition:.18s}
+.dropdown-link{padding:11px 12px;color:#fff}.dropdown-link:hover,.mega-link:hover{background:rgba(99,245,237,.075);color:var(--cyan)}
+.dropdown-link small,.mega-link-desc{display:block;margin-top:3px;color:var(--muted);font-size:.75rem;line-height:1.4}
+.mega-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 34px}
+.mega-section-title{margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--cyan);font-size:.82rem;text-transform:uppercase;letter-spacing:1px}
+.mega-link{padding:9px 10px;margin:2px -10px}.mega-link-title{display:block;color:#fff;font-weight:700;font-size:.9rem}
+.coming-soon{display:inline-block;margin-left:5px;padding:2px 5px;border:1px solid rgba(255,230,154,.55);border-radius:4px;color:var(--gold);font-size:.56rem;text-transform:uppercase}
+.nav-toggle{display:none;align-self:center;border:1px solid var(--line);background:rgba(99,245,237,.06);color:#fff;border-radius:8px;padding:8px 11px;font-size:1.1rem}
+.content-wrapper{flex:1}
+.container{
+  width:min(1120px,calc(100% - 40px));margin:42px auto;padding:42px;
+  background:linear-gradient(145deg,rgba(13,31,64,.72),rgba(20,21,64,.60));
+  border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter:blur(20px) saturate(1.18);-webkit-backdrop-filter:blur(20px) saturate(1.18)
+}
+h1,h2,h3,h4{font-family:'Cinzel',serif;color:#fff}
+h1{margin:0;text-align:center;font-size:clamp(2.1rem,5vw,3.5rem);letter-spacing:1.5px;text-shadow:0 0 24px rgba(99,245,237,.28)}
+.subtitle{text-align:center;color:var(--cyan);letter-spacing:2.5px;text-transform:uppercase;margin:8px 0 38px}
+.section-title{margin:44px 0 22px;padding-bottom:10px;border-bottom:1px solid var(--line-strong);color:#fff}
+.hero{min-height:360px;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}
+.hero-inner{max-width:760px}.hero-kicker{color:var(--cyan);text-transform:uppercase;letter-spacing:4px;font-weight:700;font-size:.78rem}
+.hero h1{font-size:clamp(3rem,8vw,5.5rem);line-height:1}.hero p{max-width:650px;margin:18px auto;color:#d9e9f8;font-size:1.08rem;line-height:1.75}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:25px}
+.announcement,.admin-box,.staff-card,.wiki-category-box,.team-description,.glass-card,.card{
+  background:linear-gradient(145deg,rgba(12,29,61,.72),rgba(18,20,58,.62))!important;
+  border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:0 14px 38px rgba(3,9,30,.20);
+  backdrop-filter:blur(14px)
+}
+.announcement{padding:24px;margin-bottom:18px}.announcement h3{color:var(--cyan);margin-top:0}
+.admin-box{padding:28px;margin-bottom:32px}.team-description{padding:18px 20px;margin-bottom:22px;border-left:3px solid var(--cyan)!important;line-height:1.65;color:#dcecff}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px;margin-bottom:42px}
+.staff-card{padding:26px 18px;text-align:center;transition:.22s;overflow:hidden}.staff-card:hover{transform:translateY(-4px);border-color:var(--line-strong)!important;box-shadow:0 18px 48px rgba(3,9,30,.34),0 0 28px rgba(99,245,237,.07)}
+.staff-img{width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan);box-shadow:0 0 25px rgba(99,245,237,.25)}
+.staff-role{color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:.82rem}
+.rules-grid {
     display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    overflow-x: hidden; /* Prevents scrollbars from the blur scale */
-    background-color: var(--bg-deep); /* Fallback color */
-    position: relative; /* Required for the pseudo-element to stick */
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 42px;
 }
 
-/* This is the "Ghost" layer that holds the blurred image */
-body::before {
-    content: "";
-    position: fixed; /* Fixed so it doesn't scroll with the page */
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%;
-    z-index: -1; /* Puts it BEHIND the text */
-
-    /* 1. The Image */
-    background-image: url('background.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-
-    /* 2. The Blur Effect */
-    filter: blur(12px) brightness(0.6); /* Blurs and darkens it so text pops */
-    
-    /* 3. The Scale Fix */
-    /* We zoom in 10% (1.1) so the blurred edges don't show white lines */
-    transform: scale(1.1); 
+.rules-grid .staff-card {
+    flex: 0 1 180px;
+    width: 180px;
 }
-
-/* An extra overlay to force the "Teal/Void" tint over the image */
-body::after {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: -1;
-    /* Teal at top, Dark Purple at bottom */
-    background: linear-gradient(to bottom, rgba(0, 224, 198, 0.15), rgba(5, 10, 20, 0.85));
-    pointer-events: none;
+.role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:22px 0 32px}
+.role-btn{padding:13px 14px;text-align:center;border:1px solid var(--line);border-radius:10px;background:rgba(8,17,42,.56);color:#eaf8ff;cursor:pointer;transition:.2s}
+.role-btn:hover,.role-btn.active{border-color:var(--cyan);background:rgba(99,245,237,.12);color:#fff;box-shadow:0 0 18px rgba(99,245,237,.12)}
+.dynamic-content{display:none;animation:fadeUp .3s ease}.dynamic-content.visible{display:block}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.form-group{margin-bottom:22px}label,.form-label{display:block;margin-bottom:8px;color:var(--cyan);font-weight:700}
+input,textarea,select,.majikku-input,.form-control{
+  width:100%;padding:13px 14px;background:rgba(4,11,31,.60)!important;border:1px solid rgba(157,221,255,.18)!important;
+  border-radius:10px!important;color:#fff!important;font:inherit;outline:none;transition:.2s
 }
-
-/* --- NAVIGATION BAR --- */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 40px;
-    background: rgba(5, 10, 20, 0.9);
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 0 20px rgba(0, 224, 198, 0.1); /* Teal Shadow */
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    backdrop-filter: blur(10px);
+input:focus,textarea:focus,select:focus,.majikku-input:focus,.form-control:focus{border-color:var(--cyan)!important;box-shadow:0 0 0 3px rgba(99,245,237,.09)!important}
+select option{background:#101a38;color:#fff}.read-only{opacity:.72}.desc-text,.text-muted{color:var(--muted)!important;font-size:.86rem;line-height:1.5}
+.char-count{display:block;text-align:right;color:#8da3bd;font-size:.76rem;margin-top:4px}.char-count.limit-reached{color:var(--danger)}
+.range-wrap{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(4,11,31,.42);border:1px solid rgba(157,221,255,.12);border-radius:10px}
+input[type=range]{accent-color:var(--cyan);padding:0}.checkbox-group{display:flex;gap:12px;align-items:flex-start;padding:14px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:rgba(4,11,31,.42)}
+.checkbox-group input{width:20px;height:20px;accent-color:var(--cyan)}
+.submit-btn,.btn-majikku,.btn-primary,.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(157,255,249,.35)!important;
+  border-radius:10px!important;padding:12px 22px;background:linear-gradient(135deg,#35d8dc,#7f73ef)!important;
+  color:#fff!important;text-decoration:none;font-weight:800;letter-spacing:.45px;cursor:pointer;box-shadow:0 10px 26px rgba(45,102,200,.22);transition:.2s
 }
-
-.nav-links a {
-    color: #fff;
-    text-decoration: none;
-    margin-left: 25px;
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-    font-size: 0.95rem;
-    transition: 0.3s;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    position: relative;
+.submit-btn,.btn-majikku{width:100%}.submit-btn:hover,.btn-majikku:hover,.btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 14px 32px rgba(70,153,229,.28)}
+.submit-btn:disabled,.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-neon-toggle{width:auto;background:rgba(8,17,42,.55)!important}.btn-neon-red.active{border-color:var(--danger)!important}.btn-neon-gold.active{border-color:var(--gold)!important}
+.wiki-container{display:flex;flex-direction:column;gap:16px}.wiki-category-box{padding:18px}.wiki-cat-title{color:var(--cyan);border-bottom:1px solid var(--line);padding-bottom:8px}
+.wiki-page-list{list-style:none;padding-left:8px}.wiki-link{display:flex;padding:5px 0;color:#e4f4ff;text-decoration:none}.wiki-link:hover{padding-left:4px;color:var(--cyan)}
+.wiki-subcategory-container{margin-left:18px;padding-left:14px;border-left:1px solid var(--line)}
+.note-editor.note-frame{border:1px solid var(--line)!important;background:rgba(5,12,31,.75)!important}.note-editing-area,.note-editable{background:#0b1531!important;color:#fff!important}.note-toolbar{background:#101a38!important;border-color:var(--line)!important}.note-btn{color:#fff!important;background:#162143!important}
+.site-footer{margin-top:50px;padding:38px 20px;text-align:center;background:rgba(5,11,28,.86);border-top:1px solid var(--line);backdrop-filter:blur(14px)}
+.footer-links,.footer-legal{margin-bottom:18px}.footer-link-main,.footer-link-legal{margin:0 9px;text-decoration:none}.footer-link-main{color:#fff;font-weight:700;text-transform:uppercase;font-size:.82rem}.footer-link-legal{color:var(--muted);font-size:.82rem}.footer-copy{color:#7890aa;font-size:.78rem;line-height:1.6}
+.notice-card{padding:24px;border:1px solid var(--line);border-radius:16px;background:rgba(9,21,50,.68);margin:20px 0}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.feature-card{padding:22px;border:1px solid var(--line);border-radius:16px;background:rgba(9,21,50,.60)}
+.feature-card h3{margin-top:0;color:var(--cyan)}.feature-card p{color:var(--muted);line-height:1.6}
+@media(max-width:1080px){
+ .navbar{padding:0 18px;flex-wrap:wrap;align-items:center}.nav-toggle{display:block}.nav-links{display:none;flex-basis:100%;width:100%;flex-direction:column;padding:8px 0 14px}.nav-links.mobile-open{display:flex}
+ .nav-item{display:block;width:100%}.nav-link,.nav-links>a{width:100%;min-height:44px;padding:0 10px;justify-content:space-between}
+ .nav-dropdown,.support-mega{position:static;width:auto;min-width:0;margin:0 8px 8px;padding:8px;display:none;opacity:1;visibility:visible;transform:none;pointer-events:auto;box-shadow:none;border-radius:10px}
+ .nav-item.open>.nav-dropdown,.nav-item.open>.support-mega{display:block}.mega-grid{grid-template-columns:1fr}.nav-btn-admin,.nav-btn-logout{width:auto!important;margin:6px 10px!important}
 }
-
-/* The "Underline" Hover Effect */
-.nav-links a::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: -5px;
-    left: 0;
-    background-color: var(--primary);
-    transition: 0.3s;
+@media(max-width:700px){
+ .container{width:calc(100% - 22px);margin:20px auto;padding:24px 18px;border-radius:18px}.hero{min-height:300px;padding:28px 5px}
+ form>div[style*="display: flex"]{flex-direction:column!important;gap:12px!important}.staff-grid{grid-template-columns:1fr 1fr}.role-grid{grid-template-columns:1fr}.footer-link-main,.footer-link-legal{display:inline-block;margin:5px 7px}
 }
-
-.nav-links a:hover {
-    color: var(--primary);
-    text-shadow: 0 0 10px var(--primary-glow);
-}
-.nav-links a:hover::after {
-    width: 100%;
-}
-
-/* --- MAIN CONTAINER (The Glass Box) --- */
-.container {
-    width: 90%;
-    max-width: 1000px;
-    margin: 40px auto;
-    background: var(--glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 50px;
-    box-shadow: 0 0 50px rgba(0, 224, 198, 0.05);
-}
-
-/* --- TYPOGRAPHY --- */
-h1, h2, h3 {
-    font-family: 'Cinzel', serif;
-    color: #fff;
-    text-shadow: 0 0 15px rgba(0, 224, 198, 0.4); /* Teal Glow */
-    margin-bottom: 15px;
-}
-h1 { text-align: center; font-size: 3rem; margin-top: 0; letter-spacing: 2px; }
-.subtitle { 
-    text-align: center; 
-    color: var(--primary); 
-    font-size: 1.1rem;
-    margin-bottom: 40px; 
-    letter-spacing: 3px;
-    text-transform: uppercase;
-}
-
-.section-title {
-    border-bottom: 2px solid var(--primary); /* Teal line */
-    padding-bottom: 10px;
-    margin-top: 50px;
-    margin-bottom: 25px;
-    color: #fff;
-    font-size: 1.8rem;
-}
-
-/* --- FORMS (Inputs & Textareas) --- */
-.form-group { margin-bottom: 25px; }
-label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary); letter-spacing: 0.5px; }
-
-input, textarea, select {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    box-sizing: border-box;
-    transition: 0.3s;
-}
-
-input:focus, textarea:focus, select:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: rgba(0, 224, 198, 0.05);
-    box-shadow: 0 0 15px rgba(0, 224, 198, 0.2);
-}
-
-.desc-text {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-    margin-top: -5px;
-    font-style: italic;
-}
-
-/* --- BUTTONS --- */
-.submit-btn {
-    background: linear-gradient(135deg, var(--secondary), var(--primary)); /* Purple to Teal */
-    color: white;
-    border: none;
-    width: 100%;
-    padding: 20px;
-    font-size: 1.2rem;
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 20px;
-    transition: 0.3s;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-.submit-btn:hover { 
-    transform: scale(1.02); 
-    box-shadow: 0 0 30px var(--primary-glow); 
-    background: linear-gradient(135deg, var(--primary), var(--secondary)); /* Swap gradient on hover */
-}
-
-/* --- ROLE SELECTOR GRID (Buttons) --- */
-.role-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.role-btn {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    padding: 15px;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: 0.3s;
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-    color: var(--text-muted);
-    user-select: none;
-}
-
-.role-btn:hover {
-    background: rgba(0, 224, 198, 0.1);
-    color: #fff;
-    border-color: #fff;
-    transform: translateY(-2px);
-}
-
-.role-btn.active {
-    background: var(--primary);
-    color: #000; /* Dark text on bright button for contrast */
-    box-shadow: 0 0 20px var(--primary-glow);
-    border-color: var(--primary);
-}
-
-/* --- STAFF GRID --- */
-.staff-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-    gap: 25px; 
-    margin-bottom: 50px;
-}
-
-.staff-card { 
-    background: rgba(255,255,255,0.03); 
-    padding: 30px 20px; 
-    border-radius: 15px; 
-    text-align: center; 
-    border: 1px solid var(--border); 
-    transition: 0.3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Magical shine effect on cards */
-.staff-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--primary), transparent);
-    opacity: 0.5;
-}
-
-.staff-card:hover { 
-    transform: translateY(-5px); 
-    border-color: var(--primary); 
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    background: rgba(0, 224, 198, 0.05);
-}
-
-.staff-img { 
-    width: 100px; 
-    height: 100px; 
-    border-radius: 50%; 
-    border: 3px solid var(--primary); 
-    margin-bottom: 15px; 
-    object-fit: cover; 
-    box-shadow: 0 0 15px var(--primary-glow);
-}
-
-.staff-role { 
-    color: var(--primary); 
-    font-size: 0.9rem; 
-    font-weight: bold; 
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-top: 5px;
-}
-
-/* --- DYNAMIC SECTION LOGIC --- */
-.dynamic-content {
-    display: none; 
-    animation: slideDown 0.5s ease;
-}
-.dynamic-content.visible { display: block; }
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.team-description {
-    background: rgba(0, 224, 198, 0.05); /* Teal tint */
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border-left: 3px solid var(--primary);
-    line-height: 1.6;
-}
-
-/* --- RANGE SLIDERS --- */
-.range-wrap {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: rgba(0,0,0,0.3);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-input[type="range"] {
-    accent-color: var(--primary);
-    cursor: pointer;
-    border: none;
-    padding: 0;
-    height: 6px;
-}
-
-/* --- CHECKBOX GROUPS --- */
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
-    background: rgba(0,0,0,0.3);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: 0.3s;
-}
-.checkbox-group:hover {
-    border-color: var(--primary);
-    background: rgba(0, 224, 198, 0.05);
-}
-.checkbox-group input {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--primary);
-}
-
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-/* --- ADMIN PANEL STYLES --- */
-
-.admin-box {
-    background: rgba(0, 0, 0, 0.4); /* Dark glass effect */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 12px;
-    margin-bottom: 40px;
-    backdrop-filter: blur(5px);
-}
-
-.majikku-input {
-    width: 100%;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    color: white;
-    font-family: 'Inter', sans-serif;
-    margin-bottom: 20px;
-    font-size: 1rem;
-}
-
-.majikku-input:focus {
-    outline: none;
-    border-color: var(--primary); /* Assumes --primary is defined higher up */
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.submit-btn {
-    background: linear-gradient(45deg, #00ccff, #aa00ff); /* Fallback colors if vars aren't set */
-    background: linear-gradient(45deg, var(--primary), var(--secondary));
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: transform 0.2s;
-    width: 100%;
-}
-
-.submit-btn:hover {
-    transform: scale(1.02);
-    filter: brightness(1.2);
-}
-
-/* --- SUMMERNOTE DARK MODE OVERRIDES --- */
-.note-editor.note-frame {
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: rgba(255, 255, 255, 0.05);
-}
-.note-editing-area {
-    background-color: #222 !important; 
-    color: white !important;
-}
-.note-toolbar {
-    background-color: rgba(0,0,0,0.5) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-}
-.note-btn {
-    color: white !important;
-    background: transparent !important;
-}
-
-p.desc-text {
-    text-align: center;
-}
-
-/* =========================================
-   MOBILE RESPONSIVENESS (Add to bottom)
-   ========================================= */
-
-@media screen and (max-width: 768px) {
-
-    /* 1. Fix Navigation Bar */
-    .navbar {
-        flex-direction: column; /* Stack Logo on top of links */
-        padding: 15px;
-        gap: 15px;
-    }
-
-    .nav-links {
-        display: flex;
-        flex-wrap: wrap; /* Allow links to wrap to next line if needed */
-        justify-content: center; /* Center them */
-        width: 100%;
-    }
-
-    .nav-links a {
-        margin: 5px 10px; /* Even spacing around links */
-        font-size: 0.85rem; /* Slightly smaller text */
-    }
-
-    /* 2. Fix Main Container Padding */
-    .container {
-        width: 95%; /* Use more screen width */
-        padding: 20px; /* Reduce padding from 50px to 20px */
-        margin-top: 20px;
-    }
-
-    /* 3. Fix Typography sizing */
-    h1 {
-        font-size: 2rem; /* Shrink the big title */
-        letter-spacing: 1px;
-    }
-    
-    .subtitle {
-        font-size: 0.9rem;
-        margin-bottom: 25px;
-    }
-
-    /* 4. Fix Role Grid (Buttons) */
-    .role-grid {
-        grid-template-columns: 1fr; /* Force 1 column (stack buttons vertically) */
-    }
-    
-    /* 5. Fix Staff Grid */
-    .staff-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Allow smaller cards */
-        gap: 15px;
-    }
-    
-    .staff-card {
-        padding: 20px 10px; /* Reduce card padding */
-    }
-
-    /* 6. Fix Form Inputs */
-    /* This overrides the 'display:flex' inline styles you used for Age/Timezone */
-    form > div[style*="display: flex"] {
-        flex-direction: column !important; /* Stack inputs vertically */
-        gap: 15px !important;
-    }
-    
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    /* 7. Hide the ghost background effect on mobile to save battery/performance */
-    body::before {
-        filter: blur(5px) brightness(0.4); /* Less blur needed on small screens */
-        transform: scale(1);
-    }
-}
-
-/* Custom Majikku Submit Button */
-.btn-majikku {
-    background: linear-gradient(135deg, #00b4db, #0083b0); /* Matches your Teal headers */
-    color: #ffffff;
-    border: none;
-    padding: 12px 30px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 8px; /* Slightly rounded corners */
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); /* The "Magical" Glow */
-    transition: all 0.3s ease;
-    width: 100%; /* Makes it span the full width of the form */
-    margin-top: 20px;
-}
-
-/* Hover Effect - Makes it lift and glow brighter */
-.btn-majikku:hover {
-    background: linear-gradient(135deg, #00d2ff, #3a7bd5);
-    box-shadow: 0 6px 20px rgba(0, 210, 255, 0.6);
-    transform: translateY(-2px);
-}
-
-/* Active/Click Effect */
-.btn-majikku:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 10px rgba(0, 180, 219, 0.4);
-}
-
-/* Base styling for the toggle buttons */
-.btn-neon-toggle {
-    background: transparent;
-    border: 1px solid;
-    padding: 10px 30px;
-    font-size: 1rem;
-    font-weight: bold;
-    text-transform: uppercase; /* Matches the Build Team button */
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    border-radius: 6px;
-}
-
-/* --- Player Button (Red Glow) --- */
-.btn-neon-red {
-    border-color: #ff4b4b;
-    color: #ff4b4b;
-}
-
-.btn-neon-red:hover,
-.btn-neon-red.active {
-    background-color: #ff4b4b;
-    color: #ffffff;
-    box-shadow: 0 0 20px rgba(255, 75, 75, 0.6); /* The Glow Effect */
-    transform: translateY(-2px);
-}
-
-/* --- Staff Button (Gold Glow) --- */
-.btn-neon-gold {
-    border-color: #ffd700;
-    color: #ffd700;
-}
-
-.btn-neon-gold:hover,
-.btn-neon-gold.active {
-    background-color: #ffd700;
-    color: #000000; /* Black text reads better on Gold */
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); /* The Glow Effect */
-    transform: translateY(-2px);
-}
+@media(max-width:450px){.staff-grid{grid-template-columns:1fr}}

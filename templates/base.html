@@ -1,218 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8">
-    <meta property="og:site_name" content="Majikku Server">
-    <meta property="og:title" content="Majikku - Hytale Server">
-    <meta property="og:description" content="Join the adventure! Read our lore, check events, and apply for staff.">
-    <meta property="og:image" content="https://majikku.org/static/favicon.ico"> 
-    <meta property="og:url" content="{{ request.url }}">
-    <meta name="theme-color" content="#59A7D9"> 
-    {% block meta_tags %}{% endblock %}
-    
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Majikku Network</title>
-    
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon.png') }}">
-
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <style>
-        /* --- DROPDOWN FIX --- */
-        select option {
-            background-color: #2b2d31;
-            color: #ffffff;
-        }
-        select option:checked, select option:hover {
-            background-color: #40444b;
-            color: #ffffff;
-        }
-
-        /* --- LAYOUT FIX (Pushes footer to bottom) --- */
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .content-wrapper {
-            flex: 1; 
-        }
-
-        /* --- NAVBAR STYLES --- */
-        .navbar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            gap: 20px;
-        }
-        .nav-brand {
-            font-family: 'Cinzel', serif; 
-            font-size: 1.6rem; 
-            color: white;
-            white-space: nowrap;
-        }
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: center;
-        }
-        .nav-links a {
-            text-decoration: none;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-            transition: color 0.2s;
-            white-space: nowrap;
-        }
-        .nav-links a:hover { color: white; }
-        .nav-btn-admin {
-            color: var(--primary) !important; 
-            border: 1px solid var(--primary); 
-            padding: 6px 14px; 
-            border-radius: 6px;
-        }
-        .nav-btn-logout {
-            border: 1px solid var(--secondary); 
-            padding: 6px 14px; 
-            border-radius: 6px;
-        }
-        .nav-highlight { color: #ffcc00 !important; }
-
-        @media (max-width: 1200px) {
-            .navbar { flex-direction: column; text-align: center; }
-            .nav-links { justify-content: center; }
-        }
-
-        /* --- FOOTER STYLES (Updated) --- */
-        .site-footer {
-            background-color: #1a1c20;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 40px 20px;
-            margin-top: 60px;
-            text-align: center;
-            font-family: 'Inter', sans-serif;
-        }
-        .footer-links { margin-bottom: 20px; }
-        
-        /* Main Links (Staff, Report, Socials) */
-        .footer-link-main {
-            color: #ffffff;
-            text-decoration: none;
-            margin: 0 15px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-        }
-        .footer-link-main:hover { color: var(--accent, #00b4db); }
-
-        /* Legal Links (TOS, Privacy, Refund) */
-        .footer-legal { margin-bottom: 25px; }
-        .footer-link-legal {
-            color: #888;
-            text-decoration: none;
-            margin: 0 10px;
-            font-size: 0.85rem;
-            transition: color 0.2s;
-        }
-        .footer-link-legal:hover { color: #fff; }
-        .footer-divider { color: #444; font-size: 0.8rem; }
-
-        /* Copyright */
-        .footer-copy {
-            color: #555;
-            font-size: 0.8rem;
-            line-height: 1.5;
-        }
-
-        /* --- BUTTON STYLES --- */
-        .btn-majikku {
-            background: linear-gradient(135deg, #00b4db, #0083b0);
-            color: #ffffff;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 20px;
-        }
-        .btn-majikku:hover {
-            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
-            box-shadow: 0 6px 20px rgba(0, 210, 255, 0.6);
-            transform: translateY(-2px);
-        }
-    </style>
+<head>
+<meta charset="utf-8">
+<meta property="og:site_name" content="Majikku Network">
+<meta property="og:title" content="Majikku - Hytale Server">
+<meta property="og:description" content="A magical Hytale community shaped by adventure, creativity, and discovery.">
+<meta property="og:image" content="{{ url_for('static', filename='background.jpg', _external=True) }}">
+<meta property="og:url" content="{{ request.url }}">
+<meta name="theme-color" content="#55e6e3">
+{% block meta_tags %}{% endblock %}
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Majikku Network{% endblock %}</title>
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">Majikku Network</div>
-        <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/wiki">Wiki</a>
-            <a href="/events">Events</a>
-            <a href="/rules">Rules</a>
-            
-            <a href="/apply">Applications</a>
-            <a href="/appeal">Appeals</a>
-            <a href="store.majikku.org" target="_blank" class="nav-highlight">Store</a>
-            <a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" class="nav-highlight">Discord</a>
-
-            {% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}
-                <li class="nav-item" style="list-style: none;">
-                    <a href="/admin" class="nav-btn-admin">Admin</a>
-                </li>
-            {% endif %}
-
-            {% if session.get('user') %}
-                <a href="/logout" class="nav-btn-logout">Logout</a>
-            {% else %}
-                <a href="/login">Login</a>
-            {% endif %}
-        </div>
-    </nav>
-
-    <div class="content-wrapper container">
-        {% block content %}{% endblock %}
-    </div>
-
-    <footer class="site-footer">
-        <div class="container">
-            
-            <div class="footer-links">
-                <a href="/staff" class="footer-link-main">Staff Team</a>
-                <a href="/report" class="footer-link-main">Report Incident</a>
-                <a href="/socials" class="footer-link-main">Social Media</a>
-            </div>
-
-            <div class="footer-legal">
-                <a href="/legal/tos" class="footer-link-legal">Terms of Service</a>
-                <span class="footer-divider">|</span>
-                <a href="/legal/privacy" class="footer-link-legal">Privacy Policy</a>
-                <span class="footer-divider">|</span>
-                <a href="/legal/refund" class="footer-link-legal">Refund Policy</a>
-            </div>
-
-            <div class="footer-copy">
-                &copy; 2026 Majikku Network. All Rights Reserved.<br>
-                We are not affiliated with Hypixel Studios or any real-world brands.
-            </div>
-
-        </div>
-    </footer>
-
-</body>
-</html>
+<nav class="navbar" aria-label="Main navigation">
+<a class="nav-brand" href="/">Majikku Network</a>
+<button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+<div class="nav-links">
+<a href="/">Home</a>
+<div class="nav-item"><button class="nav-link nav-dropdown-toggle" type="button">Play <span class="nav-caret">▼</span></button><div class="nav-dropdown">
+<a class="dropdown-link" href="/events">Events<small>Gatherings, competitions, and community activities.</small></a>
+<a class="dropdown-link" href="/stats">Player Stats<small>Player profiles and network statistics.</small></a>
+<a class="dropdown-link" href="/leaderboards">Leaderboards<small>Network rankings and achievements.</small></a>
+</div></div>
+<div class="nav-item"><button class="nav-link nav-dropdown-toggle" type="button">Community <span class="nav-caret">▼</span></button><div class="nav-dropdown">
+<a class="dropdown-link" href="/rules">Rules<small>Community and gameplay expectations.</small></a>
+<a class="dropdown-link" href="/staff">Staff Team<small>Meet the team behind Majikku.</small></a>
+<a class="dropdown-link" href="/apply">Applications<small>Apply to help build the network.</small></a>
+<a class="dropdown-link" href="/socials">Social Media<small>Follow Majikku outside the game.</small></a>
+</div></div>
+<div class="nav-item support-item"><button class="nav-link nav-dropdown-toggle" type="button">Support <span class="nav-caret">▼</span></button><div class="support-mega"><div class="mega-grid">
+<section><h3 class="mega-section-title">Help &amp; Support</h3>
+<a class="mega-link" href="/support/general"><span class="mega-link-title">General Support</span><span class="mega-link-desc">Help with the network, accounts, or general questions.</span></a>
+<a class="mega-link" href="mailto:support@majikku.org"><span class="mega-link-title">Email Support</span><span class="mega-link-desc">Send an email to our support team.</span></a></section>
+<section><h3 class="mega-section-title">Reports</h3>
+<a class="mega-link" href="/report/player"><span class="mega-link-title">Report a Player</span><span class="mega-link-desc">Report player misconduct or rule violations.</span></a>
+<a class="mega-link" href="/report/bug"><span class="mega-link-title">Report a Bug</span><span class="mega-link-desc">Tell us about a server or website issue.</span></a></section>
+<section><h3 class="mega-section-title">Moderation</h3>
+<a class="mega-link" href="/appeal"><span class="mega-link-title">Appeal a Punishment</span><span class="mega-link-desc">Request a review of a Majikku punishment.</span></a>
+<a class="mega-link" href="/punishments/history"><span class="mega-link-title">Punishment History <span class="coming-soon">Preview</span></span><span class="mega-link-desc">The endpoint is ready while account history integration is completed.</span></a></section>
+<section><h3 class="mega-section-title">Get Involved</h3>
+<a class="mega-link" href="/apply"><span class="mega-link-title">Staff Applications</span><span class="mega-link-desc">Apply for a team that matches your strengths.</span></a>
+<a class="mega-link" href="/apply?team=coordinator"><span class="mega-link-title">Content Creator / Community</span><span class="mega-link-desc">Explore community-facing opportunities.</span></a></section>
+</div></div></div>
+<a href="/wiki">Wiki</a>
+<a href="https://store.majikku.org" target="_blank" rel="noopener noreferrer" class="nav-highlight">Store</a>
+<a href="https://discord.com/invite/yMDBmnQCYd" target="_blank" rel="noopener noreferrer" class="nav-highlight">Discord</a>
+{% if session.get('is_admin') or session.get('is_coord') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor') %}<a href="/admin" class="nav-btn-admin">Admin</a>{% endif %}
+{% if session.get('user') %}<a href="/logout" class="nav-btn-logout">Logout</a>{% else %}<a href="/login">Login</a>{% endif %}
+</div>
+</nav>
+<main class="content-wrapper container">{% block content %}{% endblock %}</main>
+<footer class="site-footer"><div>
+<div class="footer-links"><a href="/staff" class="footer-link-main">Staff Team</a><a href="/report/player" class="footer-link-main">Report Incident</a><a href="/socials" class="footer-link-main">Social Media</a></div>
+<div class="footer-legal"><a href="/legal/tos" class="footer-link-legal">Terms of Service</a><a href="/legal/privacy" class="footer-link-legal">Privacy Policy</a><a href="/legal/refund" class="footer-link-legal">Refund Policy</a></div>
+<div class="footer-copy">&copy; 2026 Majikku Network. All Rights Reserved.<br>Majikku Network is an independent community and is not affiliated with Hypixel Studios.</div>
+</div></footer>
+<script>
+(()=>{const nav=document.querySelector('.navbar'),links=document.querySelector('.nav-links'),mobile=document.querySelector('.nav-toggle'),buttons=document.querySelectorAll('.nav-dropdown-toggle');
+function close(except=null){document.querySelectorAll('.nav-item.open').forEach(i=>{if(i!==except)i.classList.remove('open')})}
+buttons.forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const i=b.closest('.nav-item'),open=!i.classList.contains('open');close(i);i.classList.toggle('open',open);b.setAttribute('aria-expanded',String(open))}));
+mobile.addEventListener('click',e=>{e.stopPropagation();const open=links.classList.toggle('mobile-open');mobile.setAttribute('aria-expanded',String(open))});
+document.addEventListener('click',e=>{if(!nav.contains(e.target)){close();links.classList.remove('mobile-open')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();links.classList.remove('mobile-open')}})})();
+</script>
+</body></html>

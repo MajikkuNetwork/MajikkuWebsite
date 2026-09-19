@@ -1411,6 +1411,53 @@ def appeal():
 
 @app.route('/submit-appeal', methods=['POST'])
 def submit_appeal():
+    if 'user' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+    data = request.get_json(silent=True) or {}
+    hytale_identity = get_application_hytale_identity()
+    if not hytale_identity or not hytale_identity.get("hytale_uuid"):
+        return jsonify({'success': False, 'error': 'A verified Hytale account is required.'}), 403
+
+    required = ['platform', 'type', 'ban_reason', 'appeal_text']
+    missing = [field for field in required if not str(data.get(field, '')).strip()]
+    if missing:
+        return jsonify({'success': False, 'error': 'Please complete all required appeal fields.'}), 400
+
+    webhook_url = APPEALS_WEBHOOK_URL
+    if not webhook_url:
+        return jsonify({'success': False, 'error': 'Appeal system is not configured.'}), 500
+
+    user = session['user']
+    def clean(value, limit=1000):
+        value = str(value or 'N/A').strip() or 'N/A'
+        return value[:limit]
+
+    embed = {
+        "title": "⚖️ New Punishment Appeal",
+        "color": 6619135,
+        "fields": [
+            {"name": "Discord User", "value": f"<@{user.get('id')}> ({clean(user.get('username'), 200)})", "inline": False},
+            {"name": "Hytale Name", "value": clean(hytale_identity.get('hytale_name'), 200), "inline": True},
+            {"name": "Hytale UUID", "value": clean(hytale_identity.get('hytale_uuid'), 200), "inline": False},
+            {"name": "Platform", "value": clean(data.get('platform'), 200), "inline": True},
+            {"name": "Punishment Type", "value": clean(data.get('type'), 200), "inline": True},
+            {"name": "Punishment ID", "value": clean(data.get('punishment_id'), 200), "inline": True},
+            {"name": "Reason Given", "value": clean(data.get('ban_reason')), "inline": False},
+            {"name": "Appeal Statement", "value": clean(data.get('appeal_text')), "inline": False}
+        ],
+        "footer": {"text": "Majikku Network Appeal System"}
+    }
+
+    try:
+        resp = requests.post(webhook_url, json={"embeds": [embed]}, timeout=10)
+        if not resp.ok:
+            print(f"Appeal webhook error: {resp.status_code} {resp.text}")
+            return jsonify({'success': False, 'error': 'The appeal could not be delivered. Please try again.'}), 502
+    except requests.exceptions.RequestException as exc:
+        print(f"Appeal webhook connection error: {exc}")
+        return jsonify({'success': False, 'error': 'The appeal service is temporarily unavailable.'}), 502
+
     return jsonify({'success': True})
 
 @app.route('/report', methods=['GET', 'POST'])
@@ -1444,12 +1491,69 @@ def report():
         send_report_bot_message(report_id, report_type, "WEBSITE", reporter_name, target_name, server_origin, reason, evidence, is_anon)
         return redirect(url_for('report_success', report_id=report_id))
     
-    return render_template('report.html', user=session['user'])
+    return render_template('report.html', user=session['user'], initial_type=request.args.get('type', 'PLAYER').upper())
 
 @app.route('/report/success/<int:report_id>')
 def report_success(report_id):
     if 'user' not in session: return redirect(url_for('login'))
     return render_template('report_success.html', user=session['user'], report_id=report_id)
+
+
+# --- NAVIGATION / SUPPORT ENDPOINTS ---
+@app.route('/support/general')
+def support_general():
+    return render_template('support_general.html', user=session.get('user'))
+
+@app.route('/support/purchase')
+def support_purchase():
+    return redirect("https://store.majikku.org")
+
+@app.route('/report/player')
+def report_player():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('report', type='PLAYER'))
+
+@app.route('/report/bug')
+def report_bug():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('report', type='BUG'))
+
+@app.route('/stats')
+def player_stats():
+    return render_template(
+        'coming_soon.html',
+        title='Player Stats',
+        message='Player profiles and live network statistics are being connected to Majikku account data.',
+        action_url='/',
+        action_label='Return Home',
+        user=session.get('user')
+    )
+
+@app.route('/leaderboards')
+def leaderboards():
+    return render_template(
+        'coming_soon.html',
+        title='Leaderboards',
+        message='Majikku leaderboards are being prepared for the network launch.',
+        action_url='/events',
+        action_label='View Events',
+        user=session.get('user')
+    )
+
+@app.route('/punishments/history')
+def punishment_history():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template(
+        'coming_soon.html',
+        title='Punishment History',
+        message='This account endpoint is ready. The final step is connecting it to the shared punishment database so players only see their own verified history.',
+        action_url='/appeal',
+        action_label='Appeal a Punishment',
+        user=session.get('user')
+    )
 
 @app.route('/favicon.ico')
 def favicon():

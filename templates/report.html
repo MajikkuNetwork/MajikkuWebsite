@@ -5,7 +5,7 @@
     
     <div class="text-center mb-5">
         <h1 style="font-family: 'Cinzel', serif; color: var(--primary);">Submit a Report</h1>
-        <p class="text-muted">Help us keep Majikku safe. Please provide as much detail as possible.</p>
+        <p class="text-muted">Give the team enough detail to understand, reproduce, or investigate the issue. Clear timelines and evidence help us act faster.</p>
     </div>
 
     <div class="d-flex justify-content-center mb-4">
@@ -15,18 +15,15 @@
             Report a Player
         </button>
         
-        <button class="btn btn-neon-toggle btn-neon-gold" 
-                id="btn-staff" 
-                onclick="switchForm('STAFF')">
-            Report Staff
-        </button>
+        <button class="btn btn-neon-toggle btn-neon-gold" id="btn-staff" onclick="switchForm('STAFF')">Report Staff</button>
+        <button class="btn btn-neon-toggle" id="btn-bug" onclick="switchForm('BUG')">Report a Bug</button>
     </div>
 
     <div class="card bg-dark border-secondary">
         <div class="card-body">
             <form action="/report" method="POST" id="reportForm" novalidate>
                 
-                <input type="hidden" name="report_type" id="report_type" value="PLAYER">
+                <input type="hidden" name="report_type" id="report_type" value="{{ initial_type|default('PLAYER') }}">
 
                 <div id="staff-alert" class="alert alert-warning" style="display: none; background-color: rgba(255, 215, 0, 0.1); border-color: #ffd700; color: #ffd700;">
                     <strong>Notice:</strong> This report will be sent <u>only</u> to the Leadership Team. Regular staff will not see this.
@@ -101,27 +98,34 @@
         // 2. Get the buttons
         const btnPlayer = document.getElementById('btn-player');
         const btnStaff = document.getElementById('btn-staff');
+        const btnBug = document.getElementById('btn-bug');
         
         // 3. Toggle the Visuals
         if (type === 'PLAYER') {
             btnPlayer.classList.add('active');
             btnStaff.classList.remove('active');
+            btnBug.classList.remove('active');
             
             // Hide Special Fields
             document.getElementById('staff-alert').style.display = 'none';
             document.getElementById('anon-group').style.display = 'none';
-        } else {
+        } else if (type === 'STAFF') {
             btnStaff.classList.add('active');
             btnPlayer.classList.remove('active');
-
-            // Show Special Fields
+            btnBug.classList.remove('active');
             document.getElementById('staff-alert').style.display = 'block';
             document.getElementById('anon-group').style.display = 'block';
+        } else {
+            btnBug.classList.add('active');
+            btnPlayer.classList.remove('active');
+            btnStaff.classList.remove('active');
+            document.getElementById('staff-alert').style.display = 'none';
+            document.getElementById('anon-group').style.display = 'none';
         }
     }
     
     // Initialize default state
-    switchForm('PLAYER');
+    switchForm('{{ initial_type|default("PLAYER") }}');
 
     // DEBUG SCRIPT: Use this to see if the form is actually submitting
     document.querySelector('form').addEventListener('submit', function(event) {

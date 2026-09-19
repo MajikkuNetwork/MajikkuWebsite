@@ -160,26 +160,26 @@
 
         <div style="display: flex; gap: 20px;">
             <div class="form-group" style="flex: 1;">
-                <label>How old are you?</label>
+                <label>How old are you? (Applicants must meet the minimum age requirement for their team.)</label>
                 <input type="number" pattern="^(1[6-9]|[2-9][0-9]|100)$" class="counted-input" maxlength="3" id="age" required>
                 <small class="char-count">0 / 3</small>
             </div>
             <div class="form-group" style="flex: 1;">
-                <label>What is your Timezone?</label>
+                <label>What timezone are you in?</label>
                 <input type="text" id="timezone" class="counted-input" maxlength="30" placeholder="e.g. EST" required>
                 <small class="char-count">0 / 30</small>
             </div>
         </div>
 
         <div class="form-group">
-            <label>How many hours can you realistically contribute daily/weekly?</label>
+            <label>How much time can you realistically contribute to Majikku in a typical week?</label>
             <div class="desc-text">This isn't a determining factor, just to gauge activity.</div>
             <input type="text" id="availability" class="counted-input" maxlength="20" placeholder="e.g. 2 hours a day" required>
             <small class="char-count">0 / 20</small>
         </div>
 
         <div class="form-group">
-            <label>What language(s) are you fluent in?</label>
+            <label>What languages can you comfortably communicate in?</label>
             <input type="text" id="languages" class="counted-input" maxlength="200">
             <small class="char-count">0 / 200</small>
         </div>
@@ -202,17 +202,17 @@
         <div id="mod" class="dynamic-content">
             <h3>Moderation Team Application</h3>
             <div class="team-description">
-                The Moderation Team serves as the guardians of our community, responsible for maintaining a safe and positive environment for all players. Accepted Applicants will begin their journey as a <strong>Helper</strong>, serving as the front-line support for the community. In this role, you are responsible for welcoming new players, answering questions in Discord and in-game chat, and de-escalating minor conflicts before reporting serious offenses to the Moderators. We are looking for individuals who possess patience, maturity, strong communication skills, and a clean history within the community.  
+                The Moderation Team protects the player experience by helping people, enforcing rules consistently, documenting incidents, and de-escalating conflict. Accepted applicants begin as a <strong>Helper</strong>, where the priority is support and good judgment rather than simply issuing punishments. Strong applicants communicate clearly, stay calm under pressure, avoid favoritism, know when to escalate, and are willing to learn Majikku's moderation procedures.
             </div>
 
             <div class="form-group">
-                <label>Why do you want to join the Moderation Team?</label>
+                <label>Why do you want to join Majikku's Moderation Team, and what would make you a good Helper?</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="600" data-question="Why Mod Team?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>How confident are you in your ability to speak to other players/staff?</label>
+                <label>How confident are you communicating calmly and professionally with players and staff?</label>
                 <div class="range-wrap">
                     <span>1</span>
                     <input type="range" min="1" max="10" class="team-answer" data-question="Comm Confidence" oninput="this.nextElementSibling.value = this.value">
@@ -222,7 +222,7 @@
             </div>
 
             <div class="form-group">
-                <label>Have you ever been a staff member on Majikku, or any where else?</label>
+                <label>Describe any previous moderation, support, or community staff experience. If none, tell us what experience you think is transferable.</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Past Experience"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -230,27 +230,27 @@
             <h4>Scenario Questions</h4>
 
             <div class="form-group">
-                <label>You observe a player that looks to be using hacks/unapproved mods on the network. Please describe in detail what you would do.</label>
+                <label>You suspect a player is using cheats or an unapproved modification. Walk us through how you would investigate, document, and escalate the situation without acting on assumptions.</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Hacker"></textarea>
                 <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
-                <label>The server is experiencing technical issues, but you are the only staff member online. Please describe in detail what you would do.</label>
+                <label>A serious technical issue begins while you are the only staff member online. What would you do immediately, what would you communicate to players, and who would you contact?</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Tech Issues"></textarea>
                 <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
-                <label>You see that there is an argument between players or even staff members. Please describe in detail what you would do.</label>
+                <label>An argument is escalating between players or staff members. How would you de-escalate it while remaining neutral and professional?</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Scenario: Argument"></textarea>
                 <small class="char-count">0 / 800</small>
             </div>
             <div class="form-group">
-                <label>You are asked a question that you don't know the answer to. What would you do?</label>
+                <label>A player asks a question you do not know the answer to. How would you respond and find a reliable answer?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Scenario: Unknown Question"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
             <div class="form-group">
-                <label>A friend of yours starts breaking the rules, and you are the only staff seeing it. What would you do</label>
+                <label>A friend begins breaking the rules and you are the only staff member who sees it. Explain how you would handle the conflict of interest.</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Scenario: Friend Breaking Rules"></textarea>
                 <small class="char-count">0 / 600</small>
                 <div class="desc-text" style="margin-top:5px;">Please be honest, If you wouldn't punish, describe why.</div>
@@ -275,42 +275,42 @@
         <div id="dev" class="dynamic-content">
             <h3>Development Team Application</h3>
             <div class="team-description">
-                The Development Team is the engine that powers Majikku, and we are looking for technical wizards proficient in Java, Python, C#, or Hytale-specific scripting to help bring our custom features to life. Accepted Applicants will begin their journey as a <strong>Jr. Developer</strong>, an entry-level role focused on learning the server’s codebase. In this position, you will work closely with the Lead Developer to handle smaller tasks such as configuring existing plugins, fixing minor bugs, and assisting the main Developers with testing code in a live environment. To succeed in this role, we require proficiency in at least one relevant coding language, a willingness to learn, and the ability to solve complex logic puzzles.  
+                The Development Team builds and maintains the systems that make Majikku unique. Accepted applicants begin as a <strong>Jr. Developer</strong> and learn the existing codebase, workflow, and testing process before taking ownership of larger features. We value readable code, debugging discipline, communication, version-control habits, and the willingness to ask questions and learn unfamiliar APIs. Java and Python are especially relevant to our current stack, but strong fundamentals matter more than knowing every tool already.
             </div>
 
             <div class="form-group">
-                <label>Why are you interested in joining the team?</label>
+                <label>Why do you want to develop for Majikku, and what type of work are you most interested in contributing?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Dev Team?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>Do you have previous experience?</label>
+                <label>Describe your previous programming, scripting, server, or collaborative development experience.</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Dev Experience"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>How well can you spot bugs and errors?</label>
+                <label>Describe how you normally debug a problem when the cause is not obvious.</label>
                 <textarea rows="2" class="team-answer counted-input" maxlength="400" data-question="Bug Spotting Ability"></textarea>
                 <small class="char-count">0 / 400</small>
             </div>
 
             <div class="form-group">
-                <label>Are you willing to learn new skills?</label>
+                <label>Tell us about a technical skill you had to learn recently and how you approached learning it.</label>
                 <textarea rows="2" class="team-answer counted-input" maxlength="300" data-question="Willing to Learn"></textarea>
                 <small class="char-count">0 / 300</small>
             </div>
 
             <div class="form-group">
-                <label>Programming Language Experience</label>
+                <label>Programming languages, frameworks, tools, and version-control experience</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="600" data-question="Programming Languages"></textarea>
                 <small class="char-count">0 / 600</small>
                 <div class="desc-text">List any languages, frameworks, or relevant tech you know.</div>
             </div>
 
             <div class="form-group">
-                <label>Tell us about yourself / Project Ideas</label>
+                <label>Tell us about yourself and describe one feature or improvement you would be excited to build for Majikku.</label>
                 <textarea rows="4" class="team-answer counted-input" maxlength="800" data-question="Dev Bio/Ideas"></textarea>
                 <small class="char-count">0 / 800</small>
             </div>
@@ -323,13 +323,13 @@
             </div>
 
             <div class="form-group">
-                <label>Why do you want to be a builder?</label>
+                <label>Why do you want to build for Majikku, and what do you think makes a build feel memorable?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Builder?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>Favorite Building Style?</label>
+                <label>Which building styles are you strongest in, and which would you like to improve?</label>
                 <select class="team-answer" data-question="Build Style">
                     <option value="" disabled selected>Select a style...</option>
                     
@@ -387,7 +387,7 @@
             </div>
 
             <div class="form-group">
-                <label>Why do you want to join the Art Department?</label>
+                <label>Why do you want to join Majikku's Art Team, and what kind of visual work do you most enjoy?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Artist?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -457,7 +457,7 @@
             </div>
 
             <div class="form-group">
-                <label>Why join the Creative Team?</label>
+                <label>Why do you want to join the Story Teller Team, and what kind of stories or worldbuilding do you enjoy creating?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Writer?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -511,13 +511,13 @@
             </div>
 
             <div class="form-group">
-                <label>Why do you want to join this team?</label>
+                <label>Why do you want to join this team, and what would you like to improve about Majikku's events or community presence?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Coordinator?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
 
             <div class="form-group">
-                <label>Do you have experience managing communities or socials?</label>
+                <label>Describe any experience with events, communities, social media, content planning, or audience engagement.</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Coord Experience"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -535,7 +535,7 @@
             </div>
 
             <div class="form-group">
-                <label>Why do you want to join the Modeling Team?</label>
+                <label>Why do you want to create models for Majikku, and what part of the Hytale-inspired style interests you most?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why Modeler?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -596,15 +596,15 @@
         <div id="tester" class="dynamic-content">
             <h3>QA / Tester Team Application</h3>
             <div class="team-description">
-                The Tester Team is our Quality Assurance department and the last line of defense before an update goes public. You will begin your journey as a <strong>Tester</strong>, where your role is not just to play games, but to break them. You will perform rigorous stress-testing on new and existing content to identify exploits, glitches, or balancing issues before public release, reporting all findings to your assigned Senior Tester. We require applicants to have the ability to write clear, reproducible bug reports. 
+                The QA / Tester Team is the final quality gate before changes reach players. Testers deliberately explore edge cases, reproduce bugs, check balance and usability, and document exactly what happened so developers can act on it. Strong testers are patient, methodical, curious, and able to separate personal preference from a reproducible problem. Clear steps, expected versus actual behavior, environment details, and useful evidence are essential.
             </div>
             <div class="form-group">
-                <label>Why do you want to join the QA/Tester Team?</label>
+                <label>Why do you want to join QA, and what makes testing different from simply playing the game?</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="Why QA Team?"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
             <div class="form-group">
-                <label>Do you have experience with bug testing?</label>
+                <label>Describe any testing experience you have. Include an example of how you would turn a problem into a useful bug report.</label>
                 <textarea rows="3" class="team-answer counted-input" maxlength="600" data-question="QA Experience"></textarea>
                 <small class="char-count">0 / 600</small>
             </div>
@@ -635,13 +635,13 @@
         </div>
 
         <div class="form-group">
-            <label>Do you have any issues with any players or staff?</label>
+            <label>Are there any current conflicts with players or staff that could affect your ability to work impartially on a team?</label>
             <textarea rows="3" class="misc-answer counted-input" maxlength="600" data-question="Player/Staff Issues"></textarea>
             <small class="char-count">0 / 600</small>
         </div>
 
         <div class="form-group">
-            <label>Do you have any punishments on the Network?</label>
+            <label>Have you received any Majikku punishments? If yes, briefly explain what happened and what changed afterward.</label>
             <input type="text" class="misc-answer" maxlength="100" data-question="Punishment History" required>
             <small class="desc-text">If none, enter "None"</small>
         </div>
