@@ -8,6 +8,7 @@ import secrets
 import hashlib
 import base64
 from urllib.parse import urlencode
+from functools import wraps
 
 # Load sensitive info from .env file
 load_dotenv()
@@ -49,22 +50,54 @@ HYTALE_SCOPES = [
     "account:game_ownership"
 ]
 
-# --- ROLE IDS (PERMISSIONS) ---
-# 1. ADMINS: Can do everything
-ADMIN_ROLE_IDS = [
-    "1207778262378487918", # Owner
-    "1207778264819572836"  # Administrator
-]
+# --- ROLE IDS / WEBSITE PERMISSIONS ---
+# These defaults match the Majikku Discord roles. Every value can be overridden in .env.
+ROLE_IDS = {
+    "owner": os.getenv("ROLE_OWNER", "1207778262378487918"),
+    "sysadmin": os.getenv("ROLE_SYSADMIN", "1489438232042016999"),
+    "staffmanager": os.getenv("ROLE_STAFF_MANAGER", "1207778271811346482"),
+    "admin": os.getenv("ROLE_ADMIN", "1207778264819572836"),
+    "lead": os.getenv("ROLE_LEAD", "1452499232849268767"),
+    "leaddev": os.getenv("ROLE_LEAD_DEV", "1207778273166098502"),
+    "leadcoord": os.getenv("ROLE_LEAD_COORD", "1207778273791184927"),
+    "eventcoord": os.getenv("ROLE_EVENT_COORD", "1392535922331095051"),
+    "socialcoord": os.getenv("ROLE_SOCIAL_COORD", "1392535907965341806"),
+    "leadstory": os.getenv("ROLE_LEAD_STORY", "1452004814375616765"),
+    "story": os.getenv("ROLE_STORY", "1452004927441342616"),
+    "wikieditor": os.getenv("ROLE_WIKI_EDITOR", "1454631225309401269"),
+    "dev": os.getenv("ROLE_DEV", "1207778264190292052"),
+    "jrdev": os.getenv("ROLE_JR_DEV", "1392535924918714408"),
+    "srmod": os.getenv("ROLE_SR_MOD", "1207778265008439467"),
+    "mod": os.getenv("ROLE_MOD", "1207778265931055204"),
+    "helper": os.getenv("ROLE_HELPER", "1207778266572918904"),
+}
 
-# 2. COORDINATORS: Can post Events
-LEAD_COORDINATOR_ID = "1207778273791184927"
+ALL_WEBSITE_PERMISSIONS = {
+    "admin.access", "lookup.players", "lookup.reports", "lookup.applications",
+    "lookup.appeals", "lookup.punishments", "content.announcements",
+    "content.events", "wiki.edit", "wiki.publish", "wiki.review",
+    "staff.view", "audit.view", "admin.settings", "admin.permissions"
+}
 
-# 3. STORYTELLERS: Can edit Wiki (Bypass Approval)
-LEAD_STORYTELLER_ID = "1452004814375616765"
-
-# 4. WIKI TEAM
-LEAD_WIKI_EDITOR_ID = "1454631224592171099" # Lead: Can Publish Directly
-WIKI_EDITOR_ID = "1454631225309401269"      # Editor: Must Submit for Approval
+ROLE_PERMISSIONS = {
+    "owner": ALL_WEBSITE_PERMISSIONS,
+    "sysadmin": ALL_WEBSITE_PERMISSIONS,
+    "admin": ALL_WEBSITE_PERMISSIONS,
+    "lead": {"admin.access","lookup.players","lookup.reports","lookup.applications","lookup.appeals","lookup.punishments","staff.view","audit.view"},
+    "staffmanager": {"admin.access","lookup.players","lookup.reports","lookup.applications","lookup.appeals","lookup.punishments","staff.view","audit.view"},
+    "srmod": {"admin.access","lookup.players","lookup.reports","lookup.applications","lookup.appeals","lookup.punishments"},
+    "mod": {"admin.access","lookup.players","lookup.reports","lookup.appeals","lookup.punishments"},
+    "helper": {"admin.access","lookup.players","lookup.reports"},
+    "leadcoord": {"admin.access","lookup.applications","content.announcements","content.events"},
+    "eventcoord": {"admin.access","content.events"},
+    "socialcoord": {"admin.access","content.announcements"},
+    "leadstory": {"admin.access","wiki.edit","wiki.publish","wiki.review"},
+    "story": {"admin.access","wiki.edit"},
+    "wikieditor": {"admin.access","wiki.edit"},
+    "leaddev": {"admin.access","lookup.players","audit.view"},
+    "dev": {"admin.access"},
+    "jrdev": {"admin.access"},
+}
 
 # --- INITIAL DATA ---
 INITIAL_WIKI_DATA = {
@@ -527,24 +560,58 @@ def get_staff_data():
         print(f"STAFF DATA ERROR: {e}")
         return {}
 
-# --- PERMISSION CHECKS (The Internal Logic) ---
-def check_role(user_id, role_ids):
-    """Checks discord API to see if user has a role ID from the list."""
+# --- PERMISSION RESOLVER ---
+def get_discord_roles(user_id):
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     try:
-        r = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers)
+        r = requests.get(f"{API_ENDPOINT}/guilds/{GUILD_ID}/members/{user_id}", headers=headers, timeout=8)
         if r.status_code == 200:
-            user_roles = r.json().get('roles', [])
-            return any(rid in user_roles for rid in role_ids)
-    except: pass
-    return False
+            return {str(role_id) for role_id in r.json().get("roles", [])}
+    except requests.RequestException as exc:
+        print(f"Discord role lookup failed: {exc}")
+    return set()
 
-# Specific Role Checks
-def check_is_admin(uid): return check_role(uid, ADMIN_ROLE_IDS)
-def check_is_coordinator(uid): return check_role(uid, [LEAD_COORDINATOR_ID])
-def check_is_storyteller(uid): return check_role(uid, [LEAD_STORYTELLER_ID])
-def check_is_lead_wiki(uid): return check_role(uid, [LEAD_WIKI_EDITOR_ID])
-def check_is_wiki_editor(uid): return check_role(uid, [WIKI_EDITOR_ID])
+def resolve_permissions(role_ids):
+    role_ids = {str(x) for x in role_ids}
+    role_names = {name for name, rid in ROLE_IDS.items() if rid and rid in role_ids}
+    permissions = set()
+    for role_name in role_names:
+        permissions.update(ROLE_PERMISSIONS.get(role_name, set()))
+    return role_names, permissions
+
+def refresh_session_permissions(user_id):
+    role_names, permissions = resolve_permissions(get_discord_roles(user_id))
+    session["staff_roles"] = sorted(role_names)
+    session["permissions"] = sorted(permissions)
+    # Compatibility with existing templates while they are migrated.
+    session["is_admin"] = bool({"owner","sysadmin","admin"} & role_names)
+    session["is_coord"] = bool({"leadcoord","eventcoord","socialcoord"} & role_names)
+    session["is_story"] = bool({"leadstory","story"} & role_names)
+    session["is_wiki_lead"] = "leadstory" in role_names
+    session["is_wiki_editor"] = "wikieditor" in role_names
+    return permissions
+
+def has_permission(permission):
+    return permission in set(session.get("permissions", []))
+
+@app.context_processor
+def permission_template_helpers():
+    return {"has_permission": has_permission}
+
+def require_permission(permission):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            if "user" not in session:
+                return redirect(url_for("login"))
+            if not has_permission(permission):
+                return "Forbidden", 403
+            return fn(*args, **kwargs)
+        return wrapped
+    return decorator
+
+def check_role(user_id, role_ids):
+    return bool(get_discord_roles(user_id) & {str(x) for x in role_ids})
 
 # --- DISCORD MESSAGING ---
 def send_report_bot_message(
@@ -741,13 +808,8 @@ def callback():
         # 4. Save Session
         session['user'] = user_data
         
-        # 5. Check Permissions
-        uid = user_data['id']
-        session['is_admin'] = check_is_admin(uid)
-        session['is_coord'] = check_is_coordinator(uid)
-        session['is_story'] = check_is_storyteller(uid)
-        session['is_wiki_lead'] = check_is_lead_wiki(uid)
-        session['is_wiki_editor'] = check_is_wiki_editor(uid)
+        # 5. Resolve Discord roles into website capabilities.
+        refresh_session_permissions(user_data['id'])
         
     except requests.exceptions.HTTPError as e:
         # If Discord says "Bad Request" (400), it usually means the code expired or was reused.
@@ -962,64 +1024,72 @@ def logout():
 
 # --- ADMIN PANEL ---
 @app.route('/admin')
+@require_permission("admin.access")
 def admin():
-    if 'user' not in session: return redirect(url_for('login'))
-    
-    # Check Access
-    has_access = (
-        session.get('is_admin') or 
-        session.get('is_coord') or 
-        session.get('is_story') or 
-        session.get('is_wiki_lead') or 
-        session.get('is_wiki_editor')
-    )
-
-    if not has_access:
-        return render_template('base.html', content="<h1>Access Denied</h1>")
-
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
-    # 1. Fetch Announcements
-    posts = []
-    if session.get('is_admin') or session.get('is_coord') or session.get('is_story'):
-        if session.get('is_admin'):
-            cursor.execute('SELECT * FROM announcements ORDER BY id DESC')
-        else:
-            allowed = []
-            if session.get('is_coord'): allowed.append("EVENT")
-            if session.get('is_story'): allowed.append("LORE")
-            if allowed:
-                fmt = ','.join(['%s'] * len(allowed))
-                cursor.execute(f"SELECT * FROM announcements WHERE category IN ({fmt}) ORDER BY id DESC", tuple(allowed))
-        posts = cursor.fetchall()
-    
-    # 2. Fetch Live Wiki Pages
-    wiki_pages = []
-    if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead') or session.get('is_wiki_editor'):
-        cursor.execute('SELECT * FROM wiki ORDER BY category, title')
-        wiki_pages = cursor.fetchall()
+    posts, wiki_pages, pending_submissions = [], [], []
+    counts = {"reports": 0, "applications": 0, "appeals": 0, "wiki": 0}
+    try:
+        if has_permission("content.announcements") or has_permission("content.events"):
+            cursor.execute("SELECT * FROM announcements ORDER BY id DESC LIMIT 50")
+            posts = cursor.fetchall()
+        if has_permission("wiki.edit"):
+            cursor.execute("SELECT * FROM wiki ORDER BY category, title")
+            wiki_pages = cursor.fetchall()
+        if has_permission("wiki.review"):
+            cursor.execute("SELECT * FROM wiki_submissions WHERE status='PENDING' ORDER BY created_at DESC")
+            pending_submissions = cursor.fetchall()
+        for key, table in (("reports","reports"),("applications","applications"),("appeals","appeals"),("wiki","wiki")):
+            try:
+                cursor.execute(f"SELECT COUNT(*) AS total FROM {table}")
+                counts[key] = cursor.fetchone()["total"]
+            except mysql.connector.Error:
+                counts[key] = 0
+    finally:
+        cursor.close(); conn.close()
+    return render_template("admin.html", user=session.get("user"), announcements=posts, wiki_pages=wiki_pages, pending_submissions=pending_submissions, counts=counts)
 
-    # 3. NEW: Fetch Pending Wiki Submissions (For Leads/Admins to review)
-    pending_submissions = []
-    # Only Admins, Story Leads, and Wiki Leads should see/approve pending items
-    if session.get('is_admin') or session.get('is_story') or session.get('is_wiki_lead'):
-        cursor.execute("SELECT * FROM wiki_submissions WHERE status='PENDING' ORDER BY created_at DESC")
-        pending_submissions = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-    
-    return render_template('admin.html', 
-                           user=session.get('user'), 
-                           announcements=posts, 
-                           wiki_pages=wiki_pages, 
-                           pending_submissions=pending_submissions)
+@app.route('/admin/lookup')
+@require_permission("admin.access")
+def admin_lookup():
+    q = (request.args.get("q") or "").strip()
+    kind = (request.args.get("kind") or "reports").lower()
+    allowed = {
+        "reports": "lookup.reports",
+        "applications": "lookup.applications",
+        "appeals": "lookup.appeals",
+        "players": "lookup.players",
+        "punishments": "lookup.punishments",
+    }
+    if kind not in allowed or not has_permission(allowed[kind]):
+        return "Forbidden", 403
+    results = []
+    if q:
+        conn = get_db_connection(); cur = conn.cursor(dictionary=True)
+        try:
+            like = f"%{q}%"
+            if kind == "reports":
+                cur.execute("SELECT * FROM reports WHERE CAST(id AS CHAR)=%s OR target_name LIKE %s OR reporter_name LIKE %s ORDER BY id DESC LIMIT 50", (q.lstrip('#'), like, like))
+            elif kind == "applications":
+                cur.execute("SELECT * FROM applications WHERE CAST(id AS CHAR)=%s OR discord_username LIKE %s OR hytale_name LIKE %s OR hytale_uuid LIKE %s ORDER BY id DESC LIMIT 50", (q.lstrip('#'), like, like, like))
+            elif kind == "appeals":
+                cur.execute("SELECT * FROM appeals WHERE CAST(id AS CHAR)=%s OR discord_username LIKE %s OR hytale_name LIKE %s OR hytale_uuid LIKE %s OR punishment_id LIKE %s ORDER BY id DESC LIMIT 50", (q.lstrip('#'), like, like, like, like))
+            elif kind == "players":
+                cur.execute(f"SELECT * FROM `{GENERAL_DB}`.`account_links` WHERE discord_id=%s OR hytale_uuid LIKE %s OR hytale_name LIKE %s OR discord_username LIKE %s LIMIT 50", (q, like, like, like))
+            else:
+                cur.execute(f"SELECT p.*, pt.name AS punishment_type FROM `{GENERAL_DB}`.`punishments` p LEFT JOIN `{GENERAL_DB}`.`punishment_types` pt ON pt.id=p.type_id WHERE CAST(p.id AS CHAR)=%s OR p.player_id LIKE %s ORDER BY p.id DESC LIMIT 50", (q.lstrip('#'), like))
+            results = cur.fetchall()
+        except mysql.connector.Error as exc:
+            print(f"Lookup error: {exc}")
+        finally:
+            cur.close(); conn.close()
+    return render_template("admin_lookup.html", user=session.get("user"), kind=kind, query=q, results=results)
 
 # --- ADMIN ACTIONS ---
 @app.route('/admin/post', methods=['POST'])
+@require_permission("content.announcements")
 def admin_post():
-    if 'user' not in session: return "Unauthorized", 403
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('INSERT INTO announcements (title, content, category, author) VALUES (%s, %s, %s, %s)', 
@@ -1046,9 +1116,9 @@ def admin_edit(id):
     conn.close()
     return render_template('edit_post.html', post=post, user=session.get('user'))
 
-@app.route('/admin/delete/<int:id>')
+@app.route('/admin/delete/<int:id>', methods=['POST'])
+@require_permission("content.announcements")
 def admin_delete(id):
-    if 'user' not in session: return "Unauthorized", 403
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('DELETE FROM announcements WHERE id = %s', (id,))
@@ -1349,6 +1419,28 @@ def submit_application():
             
         # Get the Thread ID from the response (channel_id of the message IS the thread id)
         thread_id = resp.json().get('channel_id')
+
+        # Store the application as the source of truth for status/lookup.
+        conn = get_db_connection(); cur = conn.cursor()
+        try:
+            cur.execute("""INSERT INTO applications
+                (discord_id, discord_username, hytale_uuid, hytale_name, team, status, discord_thread_id)
+                VALUES (%s,%s,%s,%s,%s,'PENDING',%s)""",
+                (discord_id, discord_username, hytale_uuid, hytale_name, team_name, str(thread_id)))
+            conn.commit(); application_id = cur.lastrowid
+        finally:
+            cur.close(); conn.close()
+
+        # Post persistent workflow buttons into the application thread.
+        if thread_id and BOT_TOKEN:
+            requests.post(f"{API_ENDPOINT}/channels/{thread_id}/messages", headers={"Authorization": f"Bot {BOT_TOKEN}", "Content-Type": "application/json"}, json={
+                "content": f"Application #{application_id} • Status: **PENDING**",
+                "components": [{"type":1,"components":[
+                    {"type":2,"style":1,"label":"Claim Review","custom_id":f"application_claim_{application_id}"},
+                    {"type":2,"style":3,"label":"Accept","custom_id":f"application_accept_{application_id}"},
+                    {"type":2,"style":4,"label":"Deny","custom_id":f"application_deny_{application_id}"}
+                ]}]
+            }, timeout=10)
         
     except requests.exceptions.RequestException as e:
         print(f"❌ Connection Error: {e}")
@@ -1450,10 +1542,31 @@ def submit_appeal():
     }
 
     try:
-        resp = requests.post(webhook_url, json={"embeds": [embed]}, timeout=10)
+        # wait=true gives us the Discord message/channel IDs for durable lookup.
+        sep = "&" if "?" in webhook_url else "?"
+        resp = requests.post(webhook_url + sep + "wait=true", json={"embeds": [embed]}, timeout=10)
         if not resp.ok:
             print(f"Appeal webhook error: {resp.status_code} {resp.text}")
             return jsonify({'success': False, 'error': 'The appeal could not be delivered. Please try again.'}), 502
+        message = resp.json()
+        conn = get_db_connection(); cur = conn.cursor()
+        try:
+            cur.execute("""INSERT INTO appeals
+                (discord_id, discord_username, hytale_uuid, hytale_name, punishment_id, platform, punishment_type, reason, appeal_text, status, discord_channel_id, discord_message_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s,%s)""",
+                (str(user.get('id')), clean(user.get('username'),200), clean(hytale_identity.get('hytale_uuid'),200), clean(hytale_identity.get('hytale_name'),200), clean(data.get('punishment_id'),200), clean(data.get('platform'),200), clean(data.get('type'),200), clean(data.get('ban_reason')), clean(data.get('appeal_text')), str(message.get('channel_id')), str(message.get('id'))))
+            conn.commit(); appeal_id = cur.lastrowid
+        finally:
+            cur.close(); conn.close()
+        if message.get('channel_id') and BOT_TOKEN:
+            requests.post(f"{API_ENDPOINT}/channels/{message['channel_id']}/messages", headers={"Authorization": f"Bot {BOT_TOKEN}", "Content-Type":"application/json"}, json={
+                "content": f"Appeal #{appeal_id} • Status: **PENDING**",
+                "components": [{"type":1,"components":[
+                    {"type":2,"style":1,"label":"Claim Appeal","custom_id":f"appeal_claim_{appeal_id}"},
+                    {"type":2,"style":3,"label":"Accept Appeal","custom_id":f"appeal_accept_{appeal_id}"},
+                    {"type":2,"style":4,"label":"Deny Appeal","custom_id":f"appeal_deny_{appeal_id}"}
+                ]}]
+            }, timeout=10)
     except requests.exceptions.RequestException as exc:
         print(f"Appeal webhook connection error: {exc}")
         return jsonify({'success': False, 'error': 'The appeal service is temporarily unavailable.'}), 502
